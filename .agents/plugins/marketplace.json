@@ -1,0 +1,20 @@
+{
+  "name": "hopper-documentation-openai",
+  "interface": {
+    "displayName": "hopper-documentation-openai"
+  },
+  "plugins": [
+    {
+      "name": "hopper-documentation-openai",
+      "source": {
+        "source": "local",
+        "path": "./hopper-documentation-openai-pt-br"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

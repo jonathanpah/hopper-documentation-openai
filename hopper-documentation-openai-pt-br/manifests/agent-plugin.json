@@ -1,0 +1,34 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hopper-documentation-openai",
+  "version": "0.1.0",
+  "description": "Handoffs incrementais do Codex, com redator separado e hooks nativos.",
+  "author": {
+    "name": "hopper-documentation-openai contributors"
+  },
+  "homepage": "https://github.com/jonathanpah/hopper-documentation-openai",
+  "repository": "https://github.com/jonathanpah/hopper-documentation-openai",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "openai",
+    "documentation",
+    "continuity",
+    "agent-skills"
+  ],
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json",
+      "interface": {
+        "displayName": "hopper-documentation-openai",
+        "shortDescription": "Documentação incremental e retomada no Codex",
+        "developerName": "hopper-documentation-openai contributors",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "hopper-documentation-openai"
+  short_description: "Records conversations for continuation"
+  default_prompt: "Use $hopper-documentation-openai:hopper-documentation-openai to record this conversation."
+policy:
+  allow_implicit_invocation: true

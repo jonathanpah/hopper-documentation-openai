@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation.py\" hook",
+            "async": true,
+            "timeout": 1800,
+            "statusMessage": "Recording continuity in the background"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation.py\" hook",
+            "timeout": 10,
+            "statusMessage": "Loading recent records from this conversation"
+          }
+        ]
+      }
+    ]
+  }
+}

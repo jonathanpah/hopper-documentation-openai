@@ -1,0 +1,6 @@
+interface:
+  display_name: "hopper-documentation-openai"
+  short_description: "Documenta conversas para retomar o trabalho"
+  default_prompt: "Use $hopper-documentation-openai:hopper-documentation-openai para registrar esta conversa."
+policy:
+  allow_implicit_invocation: true
