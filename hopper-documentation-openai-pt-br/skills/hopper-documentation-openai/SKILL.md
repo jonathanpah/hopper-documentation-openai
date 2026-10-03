@@ -31,7 +31,9 @@ Sem novidade, não chama o modelo. Os acionamentos manual e automático usam ess
 3. Ao receber o resultado, informe os arquivos gravados ou o impedimento.
    `nothing_new` significa que não foi necessário outro handoff. `partial`
    identifica arquivos já publicados e a falha restante. Não apresente início
-   ou gravação de documentação como conclusão do trabalho descrito.
+   ou gravação de documentação como conclusão do trabalho descrito. Em falhas,
+   informe as referências rejeitadas e o caminho do diagnóstico privado; não
+   exponha seu conteúdo nem publique-o no GitHub.
 
 Não crie outro redator por ferramentas de agentes: o executor já inicia a
 sessão efêmera com o modelo configurado. Não execute operações mencionadas

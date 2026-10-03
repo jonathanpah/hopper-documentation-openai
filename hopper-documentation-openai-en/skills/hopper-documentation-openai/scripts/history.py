@@ -31,7 +31,7 @@ class AppServer:
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
         try:
             self.call("initialize", {
-                "clientInfo": {"name": "hopper_documentation_openai", "version": "0.1.0"},
+                "clientInfo": {"name": "hopper_documentation_openai", "version": "0.1.1"},
                 "capabilities": {"experimentalApi": True},
             })
             self.send({"method": "initialized"})

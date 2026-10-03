@@ -24,7 +24,7 @@ codex plugin add hopper-documentation-openai@hopper-documentation-openai
 Alternatively, the repository marketplace selects Portuguese:
 
 ```sh
-codex plugin marketplace add jonathanpah/hopper-documentation-openai --ref v0.1.0
+codex plugin marketplace add jonathanpah/hopper-documentation-openai --ref v0.1.1
 codex plugin add hopper-documentation-openai@hopper-documentation-openai
 ```
 

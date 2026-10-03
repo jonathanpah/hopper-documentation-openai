@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "hopper-documentation-openai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Handoffs incrementais do Codex, com redator separado e hooks nativos.",
   "author": {
     "name": "hopper-documentation-openai contributors"

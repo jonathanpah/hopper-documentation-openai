@@ -17,8 +17,7 @@ texto, preservando quebras de linha e aspas originais. O snapshot e seus
 digests continuam estruturados; a apresentação evita rejeitar citações
 corretas por diferenças de escape JSON. A conferência literal permanece ativa.
 
-O contrato é experimental. Foi conferido no Codex `0.159.3`; outras versões
-precisam de validação. Não há parser de rollout como alternativa silenciosa.
+O contrato é experimental; outras versões precisam de validação. Não há parser de rollout como alternativa silenciosa.
 Falha de leitura não avança o estado. `max_turns` limita a coleta e falha quando
 excedido, sem descartar páginas silenciosamente.
 
@@ -39,24 +38,41 @@ um sistema de arquivos com hard links.
 O estado avança após resposta válida e, havendo mudança material, publicação.
 Metadados publicados recuperam uma queda entre handoff e atualização do estado.
 Se outra parte falhar, as anteriores ficam preservadas e a próxima execução
-continua do ponto confirmado. O índice é reconstruído mesmo sem chamar o modelo.
+continua do ponto confirmado. O índice é atualizado após cada handoff publicado,
+antecipando uma possível falha na parte seguinte. Na retomada, o índice é
+reconstruído antes do modelo, inclusive quando não há itens novos.
 
 ## Redator
 
 Usa `codex exec` com modelo e esforço explícitos, sessão efêmera, diretório
 temporário próprio, sandbox somente leitura, JSON Schema e hooks, plugins,
-apps e delegação desabilitados. O código usa a biblioteca padrão do Python.
+apps, delegação, ferramentas de shell e injeção de memórias desabilitados.
+O executor consulta o catálogo nativo de skills, desabilita todos os caminhos
+descobertos somente no processo do redator e confere que nenhum permaneceu
+habilitado. Se essa conferência falhar, não inicia o modelo. Preferências globais
+e autenticação permanecem intactas. O código usa a biblioteca padrão do Python.
 
-O prompt manda usar somente as fontes e não usar ferramentas. O Codex não
-oferece neste fluxo garantia geral de ausência de toda ferramenta de leitura
-local. Isolamento e prompt não comprovam essa propriedade. Citações literais
-são verificadas, mas isso não prova fidelidade semântica de toda afirmação.
+O esquema permite apenas referências das fontes efetivamente enviadas.
+O prompt também proíbe ferramentas e novas tarefas. Os controles descritos
+não garantem a ausência de toda capacidade de leitura em qualquer versão do
+Codex. A conferência literal não prova fidelidade semântica de toda afirmação.
 
 Uma citação inválida permite, por padrão, uma única tentativa de correção com
-o mesmo modelo e as mesmas fontes. Somente as citações inválidas são substituídas;
-o documento e as citações já válidas são preservados. A tentativa passa pela
-conferência literal; se falhar, a parte não é publicada e seu estado não avança. Não há
-nova tentativa automática para erros de execução ou mudança de modelo.
+o mesmo modelo e as mesmas fontes. O reparo informa posição, referência e trecho;
+pode trocar uma referência inexistente por uma fonte enviada. Preserva fatos e
+citações válidas; ajusta somente marcadores de referências substituídas quando
+nenhuma citação original daquele marcador permanece. A conferência literal
+preserva maiúsculas, minúsculas e pontuação, normalizando apenas espaços e
+quebras de linha. Se falhar, a parte não é publicada e seu estado não avança.
+Não há nova tentativa automática para erros de execução ou mudança de modelo.
+
+Uma falha informa a posição, a referência e o motivo de cada citação rejeitada.
+O diagnóstico contém fontes enviadas, prompt, resposta original, reparos e
+respostas combinadas, após ocultar padrões conhecidos de segredos. Fica em
+`~/.local/state/hopper-documentation-openai/diagnostics/failure-*/failure.json`,
+fora do projeto, de repositórios e do Dropbox: diretórios `0700`, arquivo `0600`.
+Sucessos não guardam transcrições. A ocultação não detecta todo segredo possível;
+não publique diagnósticos nem acrescente-os ao repositório da skill.
 
 ## Configuração
 

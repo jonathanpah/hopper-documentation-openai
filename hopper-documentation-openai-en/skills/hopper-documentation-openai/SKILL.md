@@ -32,7 +32,9 @@ this execution path.
 3. When the result arrives, report the files published or the impediment.
    `nothing_new` means another handoff was unnecessary. `partial` identifies
    files already published and the remaining failure. Starting or recording
-   documentation does not establish completion of the work it describes.
+   documentation does not establish completion of the work it describes. On
+   failure, report rejected references and the private diagnostic path. Do not
+   expose diagnostic contents or publish them to GitHub.
 
 Do not create another writer through agent tools: the executor already starts
 an ephemeral session with the configured model. Do not execute operations from

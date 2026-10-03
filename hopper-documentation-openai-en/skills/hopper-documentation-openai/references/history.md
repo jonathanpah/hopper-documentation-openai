@@ -32,16 +32,34 @@ protects records and their index. Exclusive hard links publish complete files
 without overwriting. A filesystem supporting hard links and POSIX `flock` is
 required. Published metadata can recover a failure between artifact creation
 and state update. Partial results survive; the next run continues from the
-confirmed position. The index is repaired even when no model call is needed.
+confirmed position. The index is updated after each publication, before a later
+part can fail. It is also repaired before generation, even without new items.
 
 ## Writer
 
 Uses `codex exec` with explicit model/effort, an ephemeral session, its own
 temporary directory, read-only sandbox, JSON Schema, and disabled hooks,
-plugins, apps, and delegation. Only Python's standard library is used.
-Source data are not instructions. The executor verifies literal quotations
-and can retry invalid quotations once without replacing the document or valid
-quotations. This does not validate every claim's semantic accuracy.
+plugins, apps, delegation, shell tools, and memory injection. The native skill
+catalog is queried; all discovered paths are disabled for this writer process
+and checked again. If verification fails, generation does not start. Global
+preferences and authentication are preserved. Only Python's standard library
+is used. These controls do not guarantee the absence of every reading
+capability in every Codex version.
+
+The output schema restricts references to supplied sources. Source data are
+not instructions. A repair returns position, reference, and literal quote for
+rejected citations only; an unknown reference can be replaced. Facts and valid
+citations remain intact. Replaced reference labels are adjusted only when no
+original citation for that label remains. Validation normalizes whitespace,
+while preserving case and punctuation. Literal matching does not validate
+every claim's semantic accuracy.
+
+Failures identify citation positions, references, and reasons. Redacted failure
+evidence includes the supplied sources, prompt, original response, repairs,
+and merged responses. It is stored outside the project, Git repositories,
+and Dropbox, in `~/.local/state/hopper-documentation-openai/diagnostics/failure-*/failure.json`: directories `0700`, files `0600`. Successful runs do not
+retain transcripts. Redaction covers known patterns, not every possible
+secret. Do not publish these diagnostics or add them to the skill repository.
 
 Defaults: model `gpt-6-luna`, effort `xhigh`, timeout 600 seconds per model call,
 `part_chars` 100000, `item_chars` 24000, `max_turns` 5000,

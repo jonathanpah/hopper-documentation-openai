@@ -1,6 +1,6 @@
 {
   "name": "hopper-documentation-openai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Incremental Codex handoffs with a separate writer and native hooks.",
   "author": {
     "name": "hopper-documentation-openai contributors"

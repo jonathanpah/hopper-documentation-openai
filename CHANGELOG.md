@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Disable discovered native skills, memory injection, and shell tools for the writer only.
+- Restrict source references to supplied sources and repair rejected citations by position.
+- Preserve redacted failure evidence in private user state with precise citation errors.
+- Update the index after each published handoff and recover interrupted indexes.
+
 ## 0.1.0
 
 - Native paginated Codex history and incremental records with source quotations.
