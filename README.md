@@ -11,6 +11,15 @@ Both languages share the same Python code and skill identity. Install one
 language. The root marketplace selects Portuguese. Each language package also
 has its own marketplace. CLI and desktop use the account's native installation.
 
+## Development checks
+
+Run `make build` to validate and package both languages into the ignored `build/`
+directory, including SHA256 checksums. These local packages are not published
+releases. Run `make test` for synthetic regression tests of citations, incremental
+state, interrupted publication, history collection, isolation and packaging.
+`make check` runs both. Requires Python 3.9+ and Make; no Python dependencies,
+model calls, account data or application startup are needed.
+
 ## Install
 
 Download one package and `SHA256SUMS` from the [release](https://github.com/jonathanpah/hopper-documentation-openai/releases).

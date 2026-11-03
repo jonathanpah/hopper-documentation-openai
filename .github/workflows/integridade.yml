@@ -1,0 +1,25 @@
+name: integridade
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  integridade:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Conferir os critérios congelados
+        run: |
+          git fetch --force --tags origin
+          if ! git rev-parse -q --verify refs/tags/criterios-congelados >/dev/null; then
+            if [ -e aceite/MANIFESTO.sha256 ]; then echo "CRITÉRIO ALTERADO: tag criterios-congelados ausente"; exit 1; fi
+            echo "Critérios ainda não congelados."; exit 0
+          fi
+          git show criterios-congelados:aceite/MANIFESTO.sha256 > "$RUNNER_TEMP/manifesto"
+          cmp -s "$RUNNER_TEMP/manifesto" aceite/MANIFESTO.sha256 || { echo "CRITÉRIO ALTERADO: manifesto"; exit 1; }
+          sha256sum --check --quiet "$RUNNER_TEMP/manifesto" || { echo "CRITÉRIO ALTERADO"; exit 1; }
