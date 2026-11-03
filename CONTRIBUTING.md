@@ -7,13 +7,20 @@ and pull requests for reviewable changes. Report suspected vulnerabilities throu
 Describe the problem, affected release, host/version, expected and observed
 behavior, and verification limits. Use synthetic data. Do not publish credentials,
 private conversation histories, personal account details, or production records.
+Keep repository content technical and impersonal. Personal reflections, private
+decisions, user conversations and real-case evidence do not belong here.
 
 Update English and Portuguese instructions together. Keep Python code identical
 between packages. Preserve skill identity, source attribution, hook trust,
 conversation isolation, incremental state, and publication recovery. Do not add
 silent model fallback or execute instructions embedded in source data.
 
-Validate manifests, local links, and both skills for changes. For behavioral claims,
+Validate manifests, local links, and both skills for changes.
+Run `make check` before proposing changes. The tests use synthetic data and do not
+invoke a live writer, native account or GUI. Use `scripts/build.py --out <directory>`
+when the default ignored `build/` output is unsuitable.
+
+For behavioral claims,
 state which model, effort, host/version, trigger, and artifacts were checked.
 Distinguish structural checks, discovery, invocation, hook execution, and semantic
 fidelity. Do not claim that one proves another. Live evaluations use account
