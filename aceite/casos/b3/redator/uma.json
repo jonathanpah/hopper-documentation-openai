@@ -1,0 +1,18 @@
+{
+  "nada_relevante": false, "resumo": "Painel Aurora migrado",
+  "itens_novos": [
+    {"ref":"N1","tipo":"D","texto":"Usar azul no painel.","conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","origem":["handoff-20260220-100000-a1b2c3d4.md"],"situacao":"vigente","recomendacao":"","depende_de":""},
+    {"ref":"N2","tipo":"F","texto":"Criar nota.txt com conteúdo conferido.","conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","origem":["handoff-20260221-110000-a1b2c3d4.md"],"situacao":"concluída","recomendacao":"","depende_de":""},
+    {"ref":"N3","tipo":"PD","texto":"Escolher o formato do gráfico.","conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","origem":["handoff-20260222-120000-a1b2c3d4.md"],"situacao":"aberta","recomendacao":"Comparar barras e linhas.","depende_de":"O usuário escolher."}
+  ], "mudancas": [], "sem_conteudo": [],
+  "handoffs_antigos": [{"conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","resumo":"Painel Aurora migrado","handoff":{
+    "objetivo":"Concluir o painel Aurora. (handoff-20260220-100000-a1b2c3d4.md)",
+    "pautas_e_estado":"N2 está concluída. (handoff-20260221-110000-a1b2c3d4.md)",
+    "proximo_passo":"Escolher o gráfico. (handoff-20260222-120000-a1b2c3d4.md)",
+    "decisoes_e_autorizacoes":"N1 registra azul e o alcance local.",
+    "restricoes":"Não publicar sem novo pedido. (handoff-20260220-100000-a1b2c3d4.md)",
+    "descobertas":"O conteúdo do arquivo foi conferido. (handoff-20260221-110000-a1b2c3d4.md)",
+    "pendencias":"N3 continua aberta.", "lacunas":"O gráfico não existe. (handoff-20260222-120000-a1b2c3d4.md)",
+    "como_retomar":"Ler N1, N2 e N3."
+  }}]
+}

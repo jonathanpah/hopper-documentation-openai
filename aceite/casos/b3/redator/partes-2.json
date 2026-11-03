@@ -1,0 +1,7 @@
+{
+  "nada_relevante":false,"resumo":"Migração em partes concluída","itens_novos":[
+    {"ref":"N1","tipo":"F","texto":"FIM-PRESERVAR. Criar fim.txt.","conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","origem":["handoff-20260402-110000-d1e2f3a4.md"],"situacao":"concluída","recomendacao":"","depende_de":""}
+  ],"mudancas":[],"sem_conteudo":[],"handoffs_antigos":[{"conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","resumo":"Duas partes migradas","handoff":{
+    "objetivo":"Concluir o painel.","pautas_e_estado":"FIM-PRESERVAR. N1 está pronto.","proximo_passo":"Revisar os arquivos.","decisoes_e_autorizacoes":"ROXO-PRESERVAR. A decisão de roxo continua válida.","restricoes":"Manter o projeto local.","descobertas":"Os 2 arquivos foram concluídos.","pendencias":"A revisão continua aberta.","lacunas":"Falta aprovação.","como_retomar":"Ler os itens e conferir os 2 arquivos."
+  }}]
+}

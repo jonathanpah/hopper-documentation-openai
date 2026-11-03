@@ -1,0 +1,12 @@
+{
+  "nada_relevante": false, "resumo": "Referência inexistente",
+  "conversa_simplificada": "**Assunto: referência inválida.**\n\nO pedido aparece em uma mensagem inexistente. (M999-4e5f6a7b)",
+  "itens_novos": [], "mudancas": [],
+  "handoff": {
+    "objetivo": "Registrar o pedido. (M1-4e5f6a7b)", "pautas_e_estado": "Sem mudança. (M1-4e5f6a7b)",
+    "proximo_passo": "Aguardar. (M1-4e5f6a7b)", "decisoes_e_autorizacoes": "Sem decisão. (M1-4e5f6a7b)",
+    "restricoes": "Sem restrição. (M1-4e5f6a7b)", "descobertas": "Sem descoberta. (M1-4e5f6a7b)",
+    "pendencias": "Sem pendência. (M1-4e5f6a7b)", "lacunas": "Sem lacuna. (M1-4e5f6a7b)",
+    "como_retomar": "Ler o registro. (M1-4e5f6a7b)"
+  }
+}

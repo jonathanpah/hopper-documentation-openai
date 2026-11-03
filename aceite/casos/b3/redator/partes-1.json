@@ -1,0 +1,9 @@
+{
+  "nada_relevante":false,"resumo":"Primeira parte migrada","itens_novos":[
+    {"ref":"N1","tipo":"D","texto":"ROXO-PRESERVAR. Usar roxo.","conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","origem":["handoff-20260401-100000-d1e2f3a4.md"],"situacao":"vigente","recomendacao":"","depende_de":""},
+    {"ref":"N2","tipo":"F","texto":"Criar inicio.txt.","conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","origem":["handoff-20260401-100000-d1e2f3a4.md"],"situacao":"concluída","recomendacao":"","depende_de":""},
+    {"ref":"N3","tipo":"PD","texto":"Revisar o painel.","conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","origem":["handoff-20260401-100000-d1e2f3a4.md"],"situacao":"aberta","recomendacao":"Conferir a cor.","depende_de":"O usuário aprovar."}
+  ],"mudancas":[],"sem_conteudo":[],"handoffs_antigos":[{"conversa":"019ca126-4000-7000-8000-1010d1e2f3a4","resumo":"Primeira parte","handoff":{
+    "objetivo":"Concluir o painel.","pautas_e_estado":"Inicio.txt está pronto.","proximo_passo":"Revisar o painel.","decisoes_e_autorizacoes":"ROXO-PRESERVAR. N1 registra roxo.","restricoes":"Preservar a decisão.","descobertas":"Primeira entrega concluída.","pendencias":"N3 continua aberta.","lacunas":"Falta aprovação.","como_retomar":"Ler N1, N2 e N3."
+  }}]
+}

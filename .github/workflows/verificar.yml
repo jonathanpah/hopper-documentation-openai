@@ -1,0 +1,122 @@
+# C17 e C18. Critério congelado de U2, adaptado do Anth v2.0.0.
+name: verificar
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  criterios-congelados:
+    name: critérios congelados (C18)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Conferir o manifesto e a tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f aceite/MANIFESTO.sha256 ]; then echo "CRITÉRIO ALTERADO: manifesto ausente"; exit 1; fi
+          git ls-files aceite .github/workflows/verificar.yml SPEC.md | LC_ALL=C sort | sed '/^aceite\/MANIFESTO\.sha256$/d' > "$RUNNER_TEMP/criterios-versionados.txt"
+          sed -E 's/^[0-9a-fA-F]{64} [ *]//' aceite/MANIFESTO.sha256 | LC_ALL=C sort > "$RUNNER_TEMP/criterios-manifesto.txt"
+          if ! diff -u "$RUNNER_TEMP/criterios-manifesto.txt" "$RUNNER_TEMP/criterios-versionados.txt"; then
+            echo "CRITÉRIO ALTERADO: a lista de caminhos difere do manifesto"; exit 1
+          fi
+          if ! sha256sum --check --strict aceite/MANIFESTO.sha256; then
+            echo "CRITÉRIO ALTERADO: um critério congelado não confere com o manifesto"; exit 1
+          fi
+          if ! git rev-parse -q --verify refs/tags/criterios-congelados >/dev/null; then
+            echo "CRITÉRIO ALTERADO: a tag criterios-congelados não existe"; exit 1
+          fi
+          if ! git show criterios-congelados:aceite/MANIFESTO.sha256 > "$RUNNER_TEMP/manifesto-da-tag"; then
+            echo "CRITÉRIO ALTERADO: manifesto ausente na tag"; exit 1
+          fi
+          if ! cmp -s "$RUNNER_TEMP/manifesto-da-tag" aceite/MANIFESTO.sha256; then
+            echo "CRITÉRIO ALTERADO: o manifesto difere da tag criterios-congelados"; exit 1
+          fi
+          echo "critérios congelados conferem"
+
+  testes:
+    name: testes (${{ matrix.os }}, Python ${{ matrix.python }}, ${{ matrix.pacote }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+        python: ["3.9", "3.13"]
+        pacote: [hopper-documentation-openai-pt-br, hopper-documentation-openai-en]
+    env:
+      HOPPER_DOCUMENTATION_OPENAI_PACOTE: ${{ matrix.pacote }}
+      TZ: UTC
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Testes de aceite
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 -B -m unittest discover -s aceite/testes -p 'test_*.py' -v 2>&1 | tee "$RUNNER_TEMP/aceite-${{ matrix.pacote }}.log"
+      - name: Testes do executor
+        if: always()
+        shell: bash
+        run: python3 -B -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Lista de reprovações com o ID do requisito
+        if: always()
+        shell: bash
+        run: |
+          grep -E '^(FAIL|ERROR): test_R[0-9]+' "$RUNNER_TEMP/aceite-${{ matrix.pacote }}.log" | sed -E 's/^(FAIL|ERROR): (test_R[0-9]+)[^ ]* .*/\1 \2/' | sort -u || true
+
+  conferidor:
+    name: conferidor e inventário
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Casos do conferidor
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pasta in aceite/casos/conferidor/valida*; do
+            set -- "$pasta" --idioma pt-br
+            if [ "${pasta##*/}" = valida-roteiro ]; then set -- "$@" --roteiro aceite/roteiro.json; fi
+            python3 aceite/conferir.py "$@"
+          done
+          for pasta in aceite/casos/conferidor/invalida-*; do
+            nome="${pasta##*/}"
+            n="${nome#invalida-}"
+            n="${n%%-*}"
+            set -- "$pasta" --idioma pt-br
+            if [ "$n" = F9 ]; then set -- "$@" --roteiro aceite/roteiro.json; fi
+            if saida=$(python3 aceite/conferir.py "$@" 2>&1); then
+              echo "$pasta deveria reprovar"; exit 1
+            else
+              codigo=$?
+            fi
+            echo "$saida"
+            if [ "$codigo" -ne 1 ]; then echo "$pasta terminou com código inesperado $codigo"; exit 1; fi
+            reprovadas=$(echo "$saida" | sed -nE 's/^(F[0-9]+): reprovada.*/\1/p')
+            if [ "$reprovadas" != "$n" ]; then echo "$pasta deveria reprovar somente em $n"; exit 1; fi
+          done
+      - name: Teste de inventário (T34)
+        env:
+          HOPPER_DOCUMENTATION_OPENAI_PACOTE: hopper-documentation-openai-pt-br
+          TZ: UTC
+          PYTHONDONTWRITEBYTECODE: "1"
+        shell: bash
+        run: |
+          cd aceite/testes
+          python3 -B -m unittest test_repositorio.Repositorio.test_R34_inventario_exato_do_anexo_c_e_cadeias_proibidas -v

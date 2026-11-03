@@ -1,0 +1,22 @@
+{
+  "nada_relevante": false,
+  "resumo": "Arquivo nota.txt criado e formato do gráfico pendente",
+  "conversa_simplificada": "**Assunto: arquivo nota.txt e formato do gráfico.**\n\nO usuário pediu o tema do sistema. O Codex criou nota.txt. (M1-4e5f6a7b, M2-4e5f6a7b)\n\nO formato do gráfico ficou pendente. (M5-4e5f6a7b)\n\nO manual foi encontrado em PDF. A geração falhou por limite de uso. (M12-4e5f6a7b, M14-4e5f6a7b)",
+  "itens_novos": [
+    {"ref": "N1", "tipo": "D", "texto": "Seguir o tema do sistema, claro ou escuro.", "origem": ["M1-4e5f6a7b"], "situacao": "vigente", "recomendacao": "", "depende_de": ""},
+    {"ref": "N2", "tipo": "F", "texto": "Criar o arquivo nota.txt.", "origem": ["M2-4e5f6a7b"], "situacao": "concluída", "recomendacao": "", "depende_de": ""},
+    {"ref": "N3", "tipo": "PD", "texto": "Escolher o formato do gráfico.", "origem": ["M5-4e5f6a7b"], "situacao": "aberta", "recomendacao": "Comparar 2 formatos.", "depende_de": "O usuário escolher o formato."}
+  ],
+  "mudancas": [],
+  "handoff": {
+    "objetivo": "Criar nota.txt e definir o gráfico. (M1-4e5f6a7b, M5-4e5f6a7b)",
+    "pautas_e_estado": "O arquivo existe. O formato permanece aberto. (M2-4e5f6a7b, M5-4e5f6a7b)",
+    "proximo_passo": "Escolher o formato do gráfico. (M5-4e5f6a7b)",
+    "decisoes_e_autorizacoes": "N1 registra o tema escolhido. (M1-4e5f6a7b)",
+    "restricoes": "Respeitar o limite de uso. (M14-4e5f6a7b)",
+    "descobertas": "O manual está em PDF. (M12-4e5f6a7b)",
+    "pendencias": "N3 continua aberta. (M5-4e5f6a7b)",
+    "lacunas": "A senha foi ocultada. (M3-4e5f6a7b)",
+    "como_retomar": "Ler N2 e N3 antes de continuar. (M2-4e5f6a7b, M5-4e5f6a7b)"
+  }
+}

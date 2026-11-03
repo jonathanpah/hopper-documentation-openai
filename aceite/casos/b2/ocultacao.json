@@ -1,0 +1,504 @@
+{
+ "origem": "Classe Masking de hopper-documentation-pt-br/tests/test_hopper_documentation.py, commit 8c2e438 do repositório jonathanpah/hopper-documentation, mais os 3 casos do Anexo B da spec (B2).",
+ "casos": [
+  {
+   "texto": "denied; API_TOKEN=SIMPLE_123",
+   "ocultos": [
+    "SIMPLE_123"
+   ],
+   "mantidos": [
+    "denied"
+   ]
+  },
+  {
+   "texto": "{\"password\":\"P_123\",\"api_key\":\"K_456\",\"name\":\"visible\"}",
+   "ocultos": [
+    "P_123",
+    "K_456"
+   ],
+   "mantidos": [
+    "visible"
+   ]
+  },
+  {
+   "texto": "senha=\"prefix COMPLEMENT_789\" then",
+   "ocultos": [
+    "prefix",
+    "COMPLEMENT_789"
+   ],
+   "mantidos": [
+    "then"
+   ]
+  },
+  {
+   "texto": "password: 'a value with spaces' end",
+   "ocultos": [
+    "a value",
+    "spaces"
+   ],
+   "mantidos": [
+    "end"
+   ]
+  },
+  {
+   "texto": "{\"secret\":\"a\\\"b c\",\"ok\":\"yes\"}",
+   "ocultos": [
+    "b c"
+   ],
+   "mantidos": [
+    "yes"
+   ]
+  },
+  {
+   "texto": "Authorization: Bearer abc.def.ghi",
+   "ocultos": [
+    "abc.def.ghi"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "-----BEGIN RSA PRIVATE KEY-----\nMIIE\n-----END RSA PRIVATE KEY-----",
+   "ocultos": [
+    "MIIE"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "-----BEGIN PGP PRIVATE KEY BLOCK-----\nlQOYBF\n-----END PGP PRIVATE KEY BLOCK----- after",
+   "ocultos": [
+    "lQOYBF"
+   ],
+   "mantidos": [
+    "after"
+   ]
+  },
+  {
+   "texto": "-----BEGIN A PRIVATE KEY-----\nFIRST_PART\n-----BEGIN B PRIVATE KEY-----\nSECOND_PART\n-----END B PRIVATE KEY----- after",
+   "ocultos": [
+    "FIRST_PART",
+    "SECOND_PART"
+   ],
+   "mantidos": [
+    "after"
+   ]
+  },
+  {
+   "texto": "key sk-ant-FICTIONAL1234567890 used",
+   "ocultos": [
+    "FICTIONAL1234567890"
+   ],
+   "mantidos": [
+    "used"
+   ]
+  },
+  {
+   "texto": "tokens used 5,958; next step to be defined",
+   "ocultos": [],
+   "mantidos": [
+    "tokens used 5,958",
+    "next step to be defined"
+   ]
+  },
+  {
+   "texto": "password=\"open value FICTIONAL_OPEN",
+   "ocultos": [
+    "FICTIONAL_OPEN"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "line one\\npassword=ESCAPED_VALUE and more",
+   "ocultos": [
+    "ESCAPED_VALUE"
+   ],
+   "mantidos": [
+    "line one",
+    "and more"
+   ]
+  },
+  {
+   "texto": "line one\\n--password \"FICTIONAL_F6 x\" --user x",
+   "ocultos": [
+    "FICTIONAL_F6"
+   ],
+   "mantidos": [
+    "line one",
+    "--user x"
+   ]
+  },
+  {
+   "texto": "line one\\nsenha é FICTIONAL_G7# hoje",
+   "ocultos": [
+    "FICTIONAL_G7"
+   ],
+   "mantidos": [
+    "line one",
+    "hoje"
+   ]
+  },
+  {
+   "texto": "C:\\token=WINDOWS_VALUE",
+   "ocultos": [
+    "WINDOWS_VALUE"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "**jonathan**\n```text\nAb3dE5fG7hJ9kLmNpQrStUvWx12YzAaBbCc\n```",
+   "ocultos": [
+    "Ab3dE5fG7hJ9kLmNpQrStUvWx12YzAaBbCc"
+   ],
+   "mantidos": [
+    "jonathan"
+   ]
+  },
+  {
+   "texto": "https://claude.ai/code/artifact/Ab3dE5fG7hJ9kLmNpQrStUvWx12 call_H1RCsaHAYoBs3Zm21btuoDPS 20260928-HHMM-orchestration-tasks-module-spec",
+   "ocultos": [],
+   "mantidos": [
+    "artifact/Ab3dE5fG7hJ9kLmNpQrStUvWx12",
+    "call_H1RCsaHAYoBs3Zm21btuoDPS",
+    "20260928-HHMM-orchestration-tasks-module-spec"
+   ]
+  },
+  {
+   "texto": "token JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0",
+   "ocultos": [
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+   ],
+   "mantidos": [
+    "token JWT"
+   ]
+  },
+  {
+   "texto": "postgres://admin:S3cretPass@db.example.com:5432/app",
+   "ocultos": [
+    "S3cretPass"
+   ],
+   "mantidos": [
+    "postgres://admin:",
+    "@db.example.com"
+   ]
+  },
+  {
+   "texto": "Authorization: Basic dXNlcjpwYXNzd29yZA==",
+   "ocultos": [
+    "dXNlcjpwYXNzd29yZA"
+   ],
+   "mantidos": [
+    "Authorization: Basic"
+   ]
+  },
+  {
+   "texto": "mysql --password Tr0ub4dor3 -u ana",
+   "ocultos": [
+    "Tr0ub4dor3"
+   ],
+   "mantidos": [
+    "-u ana"
+   ]
+  },
+  {
+   "texto": "a senha é Tr0ub4dor&3 e o usuário é ana",
+   "ocultos": [
+    "Tr0ub4dor&3"
+   ],
+   "mantidos": [
+    "o usuário é ana"
+   ]
+  },
+  {
+   "texto": "a senha é obrigatória para entrar",
+   "ocultos": [],
+   "mantidos": [
+    "a senha é obrigatória para entrar"
+   ]
+  },
+  {
+   "texto": "a senha do servidor é Pl4nt@d4#2026 hoje",
+   "ocultos": [
+    "Pl4nt@d4#2026"
+   ],
+   "mantidos": [
+    "a senha do servidor é",
+    "hoje"
+   ]
+  },
+  {
+   "texto": "a senha do servidor novo é obrigatória",
+   "ocultos": [],
+   "mantidos": [
+    "a senha do servidor novo é obrigatória"
+   ]
+  },
+  {
+   "texto": "tool --password \"Alpha123 bravo456\" --user reviewer",
+   "ocultos": [
+    "Alpha123",
+    "bravo456"
+   ],
+   "mantidos": [
+    "--user reviewer"
+   ]
+  },
+  {
+   "texto": "a senha do servidor é \"Alpha123 bravo456\" hoje",
+   "ocultos": [
+    "Alpha123",
+    "bravo456"
+   ],
+   "mantidos": [
+    "hoje"
+   ]
+  },
+  {
+   "texto": "tool --password \"a\\\"b c9x\" --user x",
+   "ocultos": [
+    "a\\\"b",
+    "c9x"
+   ],
+   "mantidos": [
+    "--user x"
+   ]
+  },
+  {
+   "texto": "the password is \"sunflower\" today",
+   "ocultos": [
+    "sunflower"
+   ],
+   "mantidos": [
+    "the password is",
+    "today"
+   ]
+  },
+  {
+   "texto": "password=D82504b0246DA7E7bb13dbd73588544E1a1810e2cfa8a2d4d2de01d733c1b462 --token aB12cD34-eF56-4789-aB12-cD34eF56aB78",
+   "ocultos": [
+    "D82504b0246DA7E7",
+    "aB12cD34"
+   ],
+   "mantidos": [
+    "--token"
+   ]
+  },
+  {
+   "texto": "unsigned eyJhbGciOiJub25lIn0.eyJzdWIiOiJyZXZpZXctdXNlciJ9. End",
+   "ocultos": [
+    "eyJhbGciOiJub25lIn0",
+    "eyJzdWIiOiJyZXZpZXctdXNlciJ9"
+   ],
+   "mantidos": [
+    ". End"
+   ]
+  },
+  {
+   "texto": "jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZXZpZXctdXNlciJ9.c2lnbmF0dXJlLWZpY3RpY2lh fim",
+   "ocultos": [
+    "eyJhbGciOiJIUzI1NiJ9",
+    "eyJzdWIiOiJyZXZpZXctdXNlciJ9",
+    "c2lnbmF0dXJlLWZpY3RpY2lh"
+   ],
+   "mantidos": [
+    "jwt",
+    "fim"
+   ]
+  },
+  {
+   "texto": "jwt eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJyZXZpZXctdXNlciIsIm5hbWUiOiJGaWN0aWNpbyIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c fim",
+   "ocultos": [
+    "eyJzdWIiOiJyZXZpZXctdXNlciIsIm5hbWUiOiJGaWN0aWNpbyIsImlhdCI6MTUxNjIzOTAyMn0",
+    "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+   ],
+   "mantidos": [
+    "jwt",
+    "fim"
+   ]
+  },
+  {
+   "texto": "max_output_tokens: 4096; original_token_count=632; Tokens: 20 mil; tokens.css:12; desenhar: a; NOPASSWD: ALL",
+   "ocultos": [],
+   "mantidos": [
+    "4096",
+    "632",
+    "20 mil",
+    "tokens.css:12",
+    "desenhar: a",
+    "NOPASSWD: ALL"
+   ]
+  },
+  {
+   "texto": "githubToken=Gh0_FICTIONAL1 clientSecret: CS_FICTIONAL2 XAI_API_KEY=xai-FICTIONAL3 password2=PW_FICTIONAL4",
+   "ocultos": [
+    "Gh0_FICTIONAL1",
+    "CS_FICTIONAL2",
+    "xai-FICTIONAL3",
+    "PW_FICTIONAL4"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "token_type: Bearer, Bearer tokens, \"Bearer \" + token",
+   "ocultos": [],
+   "mantidos": [
+    "token_type: Bearer",
+    "Bearer tokens",
+    "\"Bearer \" + token"
+   ]
+  },
+  {
+   "texto": "digest SHAD82504b0246DA7E7bb13dbd73588544E1a1810e2cfa8a2d4d2de01d733c1b462 key SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8",
+   "ocultos": [],
+   "mantidos": [
+    "SHAD82504b0246DA7E7bb13dbd73588544E1a1810e2cfa8a2d4d2de01d733c1b462",
+    "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8"
+   ]
+  },
+  {
+   "texto": "APIToken=FICTIONAL_A1 DBPassword: FICTIONAL_B2 {\"SQLPassword\": \"FICTIONAL_C3\", \"JWTToken\": \"FICTIONAL_D4\", \"CLIENTSecret\": \"FICTIONAL_E5\"}",
+   "ocultos": [
+    "FICTIONAL_A1",
+    "FICTIONAL_B2",
+    "FICTIONAL_C3",
+    "FICTIONAL_D4",
+    "FICTIONAL_E5"
+   ],
+   "mantidos": []
+  },
+  {
+   "texto": "config.local.settings v1.2.3 com.example.app e30.jpg",
+   "ocultos": [],
+   "mantidos": [
+    "config.local.settings",
+    "v1.2.3",
+    "com.example.app",
+    "e30.jpg"
+   ]
+  },
+  {
+   "texto": "session ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAiSldUIgp9.ewogICJzdWIiOiAiYWxpY2UiCn0.dI8BL3GaZPOrAV3NvZb64eeUvq0YA3Kf0tP2uXTYMJ4 end",
+   "ocultos": [
+    "ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAiSldUIgp9",
+    "ewogICJzdWIiOiAiYWxpY2UiCn0",
+    "dI8BL3GaZPOrAV3NvZb64eeUvq0YA3Kf0tP2uXTYMJ4"
+   ],
+   "mantidos": [
+    "session ",
+    " end"
+   ]
+  },
+  {
+   "texto": "cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.hdug44quSuZJhLd5oGfwK2y4YbE-iGQjkacj63Tf41Y; path=/",
+   "ocultos": [
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+    "e30",
+    "hdug44quSuZJhLd5oGfwK2y4YbE-iGQjkacj63Tf41Y"
+   ],
+   "mantidos": [
+    "cookie=",
+    "; path=/"
+   ]
+  },
+  {
+   "texto": "a.prefix.ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAiSldUIgp9.ewogICJzdWIiOiAiYWxpY2UiCn0.dI8BL3GaZPOrAV3NvZb64eeUvq0YA3Kf0tP2uXTYMJ4",
+   "ocultos": [
+    "ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAiSldUIgp9",
+    "ewogICJzdWIiOiAiYWxpY2UiCn0",
+    "dI8BL3GaZPOrAV3NvZb64eeUvq0YA3Kf0tP2uXTYMJ4"
+   ],
+   "mantidos": [
+    "a.prefix."
+   ]
+  },
+  {
+   "texto": "D82504b0246DA7E7bb13dbd73588544E1a1810e2cfa8a2d4d2de01d733c1b462 aB12cD34-eF56-4789-aB12-cD34eF56aB78",
+   "ocultos": [],
+   "mantidos": [
+    "D82504b0246DA7E7bb13dbd73588544E1a1810e2cfa8a2d4d2de01d733c1b462",
+    "aB12cD34-eF56-4789-aB12-cD34eF56aB78"
+   ]
+  },
+  {
+   "texto": "aws key AKIAIOSFODNN7EXAMPLE usada",
+   "ocultos": [
+    "AKIAIOSFODNN7EXAMPLE"
+   ],
+   "mantidos": [
+    "usada"
+   ]
+  },
+  {
+   "texto": "rollout-2026-09-25T15-10-28-01a0d9c2-f84a-71f1-af16-5544f7993679.jsonl d82504b0246da7e7bb13dbd73588544e1a1810e2 HOPPER_DOCUMENTATION_LOG test_manual_codex_reports_partial_when_next_part_fails",
+   "ocultos": [],
+   "mantidos": [
+    "rollout-2026-09-25T15-10-28-01a0d9c2",
+    "d82504b0246da7e7bb13dbd73588544e1a1810e2",
+    "HOPPER_DOCUMENTATION_LOG",
+    "test_manual_codex_reports_partial_when_next_part_fails"
+   ]
+  }
+ ],
+ "tokens_inteiros": [
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZSIsInNjb3BlIjoicmVhZDpyZXBvcnRzIn0.yjWP0qacRdogC4tBxDnvDPJOmw8iQXRnTo6bq7jIHIc",
+  "ewogICJhbGciOiAiSFMyNTYiLAogICJ0eXAiOiAiSldUIgp9.ewogICJzdWIiOiAiYWxpY2UiCn0.dI8BL3GaZPOrAV3NvZb64eeUvq0YA3Kf0tP2uXTYMJ4",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.hdug44quSuZJhLd5oGfwK2y4YbE-iGQjkacj63Tf41Y"
+ ],
+ "casos_da_spec": [
+  {
+   "texto": "a senha do servidor é Pl4nt@d4#2026 hoje",
+   "esperado_pt-br": "a senha do servidor é [oculto] hoje",
+   "esperado_en": "a senha do servidor é [hidden] hoje"
+  },
+  {
+   "texto": "Quero seguir o sitema, claro ou escuro.",
+   "esperado_pt-br": "Quero seguir o sitema, claro ou escuro.",
+   "esperado_en": "Quero seguir o sitema, claro ou escuro."
+  },
+  {
+   "texto": "Troque a senha e apague o rascunho; o token e a chave ficam no cofre.",
+   "esperado_pt-br": "Troque a senha e apague o rascunho; o token e a chave ficam no cofre.",
+   "esperado_en": "Troque a senha e apague o rascunho; o token e a chave ficam no cofre."
+  }
+ ],
+ "json_aninhado": [
+  {
+   "texto": "{\"password\": \"START \\\"MIDDLE\\\" END \\\\ tail\", \"api_key\": \"K_1\", \"note\": \"visible\"}",
+   "ocultos": [
+    "START",
+    "MIDDLE",
+    "END",
+    "K_1"
+   ],
+   "profundidade": 1
+  },
+  {
+   "texto": "\"{\\\"password\\\": \\\"START \\\\\\\"MIDDLE\\\\\\\" END \\\\\\\\ tail\\\", \\\"api_key\\\": \\\"K_2\\\", \\\"note\\\": \\\"visible\\\"}\"",
+   "ocultos": [
+    "START",
+    "MIDDLE",
+    "END",
+    "K_2"
+   ],
+   "profundidade": 2
+  },
+  {
+   "texto": "\"\\\"{\\\\\\\"password\\\\\\\": \\\\\\\"START \\\\\\\\\\\\\\\"MIDDLE\\\\\\\\\\\\\\\" END \\\\\\\\\\\\\\\\ tail\\\\\\\", \\\\\\\"api_key\\\\\\\": \\\\\\\"K_3\\\\\\\", \\\\\\\"note\\\\\\\": \\\\\\\"visible\\\\\\\"}\\\"\"",
+   "ocultos": [
+    "START",
+    "MIDDLE",
+    "END",
+    "K_3"
+   ],
+   "profundidade": 3
+  },
+  {
+   "texto": "\"\\\"\\\\\\\"{\\\\\\\\\\\\\\\"password\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"START \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"MIDDLE\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" END \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ tail\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"api_key\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"K_4\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\"note\\\\\\\\\\\\\\\": \\\\\\\\\\\\\\\"visible\\\\\\\\\\\\\\\"}\\\\\\\"\\\"\"",
+   "ocultos": [
+    "START",
+    "MIDDLE",
+    "END",
+    "K_4"
+   ],
+   "profundidade": 4
+  }
+ ]
+}

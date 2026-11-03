@@ -1,0 +1,7 @@
+{
+  "session_id": "01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b",
+  "transcript_path": "/tmp/sessoes-sinteticas/rollout-2026-03-14T15-20-00-01a2b3c4-5d6e-7f80-9a1b-0c1d2e3f4a5b.jsonl",
+  "cwd": "/tmp/cwd-do-evento-deve-ser-ignorado",
+  "hook_event_name": "PreCompact",
+  "trigger": "auto"
+}

@@ -1,0 +1,1 @@
+Today we decided that the monthly report goes out every Monday and that nothing is published without my review. Choosing the chart format is still pending. Record this conversation so another session can continue.
