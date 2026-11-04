@@ -256,6 +256,12 @@ class ReferencesRejected(Failure):
         super().__init__("referências recusadas: " + ", ".join(self.references))
 
 
+class MigrationDestinationsMissing(Failure):
+    def __init__(self, names):
+        self.names = sorted(set(names))
+        super().__init__('verificação da migração: arquivos sem destino: ' + ', '.join(self.names))
+
+
 class RPCFailure(Failure):
     def __init__(self, code, message):
         self.code = code
@@ -1823,12 +1829,21 @@ def migration_prompt(runtime, excerpt, previous, documents):
                                              for tag, text in tags) + task + '\n'
 
 
-def migration_part(runtime, journal):
-    sources = [s for s in journal['sources'] if s['conversation']]
+def ordered_migration_sources(sources):
+    sources = [s for s in sources if s['conversation']]
     # Keep each conversation's handoffs chronological, including across parts.
     dates = {identity: min(s['date'] for s in sources if s['conversation'] == identity)
              for identity in {s['conversation'] for s in sources}}
-    sources.sort(key=lambda s: (dates[s['conversation']], s['conversation'], s['name']))
+    return sorted(sources, key=lambda s: (dates[s['conversation']], s['conversation'], s['name']))
+
+
+def migration_source_names(sources, cursor):
+    index, offset = cursor
+    return {s['name'] for s in ordered_migration_sources(sources)[:index + bool(offset)]}
+
+
+def migration_part(runtime, journal):
+    sources = ordered_migration_sources(journal['sources'])
     index, offset = journal['cursor']
     if index >= len(sources):
         return None
@@ -1864,7 +1879,7 @@ def migration_part(runtime, journal):
     return prompt, names, identities, [index, offset], existing
 
 
-def validate_migration(response, names, identities, existing, sources):
+def validate_migration(response, names, identities, existing, sources, available_names=None):
     validate_schema(response, MIGRATION_SCHEMA)
     validate_content(response)
     refs = {item['ref'] for item in response['itens_novos']}
@@ -1878,18 +1893,19 @@ def validate_migration(response, names, identities, existing, sources):
     for source in sources:
         if source['name'] in response['sem_conteudo'] and source['useful'] >= 200:
             raise Failure('verificação da migração: handoff sem conteúdo tem 200 ou mais caracteres úteis')
+    available_names = names if available_names is None else available_names
     rejected = []
     for item in response['itens_novos']:
         if (item['conversa'] not in identities or not item['texto'].strip() or
                 not valid_status(item['tipo'], item['situacao']) or
                 item['tipo'] != 'PD' and (item['recomendacao'] or item['depende_de'])):
             raise Failure('item de migração inválido')
-        allowed_sources = {s['name'] for s in sources if s['conversation'] == item['conversa']} & names
+        allowed_sources = {s['name'] for s in sources if s['conversation'] == item['conversa']} & available_names
         rejected.extend(origin for origin in item['origem'] if origin not in allowed_sources)
     for change in response['mudancas']:
         if change['id'] in existing and not valid_status(existing[change['id']]['kind'], change['situacao']):
             raise Failure('situação de item inválida')
-        rejected.extend(origin for origin in change['origem'] if origin not in names)
+        rejected.extend(origin for origin in change['origem'] if origin not in available_names)
     texts = [response['resumo'], *strings_in(response['itens_novos']), *strings_in(response['handoffs_antigos'])]
     texts += [text for change in response['mudancas'] for text in [change['situacao'], *change['origem']]]
     allowed = set(existing) | refs
@@ -1899,10 +1915,12 @@ def validate_migration(response, names, identities, existing, sources):
         raise ReferencesRejected(rejected)
     accounted = set(response['sem_conteudo'])
     accounted.update(origin for item in response['itens_novos'] for origin in item['origem'])
-    handoffs = '\n'.join(strings_in(response['handoffs_antigos']))
-    accounted.update(name for name in names if name in handoffs)
+    for handoff in response['handoffs_antigos']:
+        text = '\n'.join(strings_in(handoff['handoff']))
+        accounted.update(s['name'] for s in sources if s['name'] in names and
+                         s['conversation'] == handoff['conversa'] and s['name'] in text)
     if names - accounted:
-        raise Failure('verificação da migração: arquivos sem destino: ' + ', '.join(sorted(names - accounted)))
+        raise MigrationDestinationsMissing(names - accounted)
 
 
 def verify_migration(runtime, journal):
@@ -2015,14 +2033,29 @@ def migrate_project(runtime):
                 for attempt in range(2):
                     response = call_writer(runtime, prompt, MIGRATION_SCHEMA)
                     try:
-                        validate_migration(response, names, identities, existing, journal['sources'])
+                        validate_migration(response, names, identities, existing, journal['sources'],
+                                           migration_source_names(journal['sources'], cursor))
                         break
-                    except ReferencesRejected as error:
+                    except (ReferencesRejected, MigrationDestinationsMissing) as error:
                         if attempt:
                             raise
-                        correction = '\nReferências recusadas: ' + ', '.join(error.references) + '\n'
+                        if isinstance(error, ReferencesRejected):
+                            correction = ('\nReferências recusadas: ' if LANGUAGE == 'pt-br' else
+                                          '\nRejected references: ') + ', '.join(error.references) + '\n'
+                        else:
+                            correction = (
+                                '\nArquivos sem destino. Corrija a resposta anterior no mesmo formato JSON de migração, '
+                                'mantendo o restante. Cada arquivo listado deve ser origem de um item, aparecer como '
+                                'origem no handoff da sua própria conversa (documento 7) ou entrar em sem_conteudo '
+                                'somente se tiver menos de 200 caracteres úteis.\n' if LANGUAGE == 'pt-br' else
+                                '\nFiles without a destination. Correct the previous response in the same migration JSON '
+                                'format, preserving the rest. Each listed file must be an item source, appear as a source '
+                                'in its own conversation handoff (document 7), or enter sem_conteudo only if it has '
+                                'fewer than 200 useful characters.\n')
+                            correction += '<arquivos_sem_destino>\n' + '\n'.join(error.names) + '\n</arquivos_sem_destino>\n'
+                            correction += '<resposta_anterior>\n' + json.dumps(hide_fields(response), ensure_ascii=False) + '\n</resposta_anterior>\n'
                         if len(prompt + correction) > limit('ORCAMENTO', 600000):
-                            raise Failure('sem espaço para corrigir referências da migração')
+                            raise Failure('sem espaço para corrigir a resposta da migração')
                         prompt += correction
                 response = hide_fields(response)
                 with runtime.folder_lock():
