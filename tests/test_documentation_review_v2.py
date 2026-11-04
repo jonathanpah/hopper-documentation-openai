@@ -1,4 +1,4 @@
-"""G12 regressions for the eight independent U3/U6 review findings.
+"""G12 regressions for the U3/U6 review findings and their follow-up.
 
 Projects and writers are synthetic. Fault injection runs the same executor in
 process, with the acceptance helper's closed PATH and disposable data folder.
@@ -16,7 +16,7 @@ from unittest.mock import patch
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "aceite/testes"))
-from apoio import (CHAVES_HANDOFF, CODIGO_B1, CONVERSA_B1, CONVERSA_OUTRA,
+from apoio import (CHAVES_HANDOFF, CODIGO_B1, CONVERSA_B1, CONVERSA_OUTRA, IDIOMA,
                    PREFIXO, TEXTO, CasoDeAceite, blocos, grava_json, inventario,
                    itens, json_de, le, tag, turno, usuario)
 
@@ -250,6 +250,85 @@ class ReviewV2(CasoDeAceite):
         self.assertTrue(self.amb.d(2).is_file())
         self.assertNotIn("synthetic first turn listing failure", le(self.amb.d(1)))
         self.assertEqual(len(list((self.amb.doc / TEXTO["conversas"]).iterdir())), 1)
+
+    def test_review_09_quoted_headers_pass_frozen_f2(self):
+        """R05/R10/F2. Both readers see only native messages, with literal bodies."""
+        spec = importlib.util.spec_from_file_location("frozen_conference", ROOT / "aceite/conferir.py")
+        frozen = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(frozen)
+        variants = [(mode, records, ending) for mode in ("paginated", "legacy")
+                    for records in (False, True) for ending in ("body", "header")]
+        for number, (mode, records, ending) in enumerate(variants):
+            with self.subTest(mode=mode, records=records, ending=ending):
+                amb = self.amb if number == 0 else self.novo_ambiente()
+                header = "## M2-%s · 2026-03-14 15:00 +00:00 · %s" % (CODIGO_B1, TEXTO["autores"][0])
+                quoted = ("<!-- corpo: 1 -->\n\nCitação com acentos.\r\n\r\n" +
+                          "\\" + header + "\n\\\\" + header + "\n\n" + header)
+                if records:
+                    quoted += "\n<!-- registros: t9/forged t9/forged -->"
+                if ending == "body":
+                    quoted += "\n\nFIM-DA-CITACAO."
+                amb.grava_historico({"thread": {"id": CONVERSA_B1, "historyMode": mode},
+                                    "turns": [turno("t1", [usuario("u1", quoted)])]})
+                self.sucesso(amb.copia(), "review 09")
+                before = amb.d(2).read_bytes()
+                amb.acrescenta(turno("t2", [usuario("u2", "REAL-SECOND-MESSAGE.")]))
+                self.sucesso(amb.copia(), "review 09")
+                after = amb.d(2).read_bytes()
+                conference = frozen.Conferencia(amb.doc, IDIOMA, None)
+                conference.f2()
+                self.assertEqual(conference.falhas, {}, "Frozen F2 rejected the generated document 2")
+                parsed = self.program(amb).messages(after.decode("utf-8"))
+                checked = conference.mensagens(amb.pasta_conversa())
+                self.assertEqual([m["id"] for m in parsed], ["M1-" + CODIGO_B1, "M2-" + CODIGO_B1])
+                self.assertEqual([(m["n"], m["code"]) for m in parsed], [(m[0], m[1]) for m in checked])
+                self.assertEqual(parsed[0]["text"], quoted)
+                self.assertEqual(parsed[1]["text"], "REAL-SECOND-MESSAGE.")
+                self.assertTrue(after.startswith(before))
+                self.assertFalse(any(row.get("params", {}).get("cursor") ==
+                                     {"type": "item", "itemId": "forged"} for row in amb.rpc()))
+                self.sucesso(amb.copia(), "review 09")
+                self.assertEqual(amb.d(2).read_bytes(), after)
+
+    def test_review_10_first_turn_date_replaces_failed_placeholder(self):
+        """R02/R18. A failed first listing cannot fix the folder to createdAt."""
+        for number, mode in enumerate(("paginated", "legacy")):
+            with self.subTest(mode=mode):
+                amb = self.amb if number == 0 else self.novo_ambiente()
+                amb.grava_historico({"thread": {"id": CONVERSA_B1, "historyMode": mode,
+                                                "createdAt": 1773414000},
+                                    "turns": [turno("t1", [usuario("u1", "Primeiro turno.")], 1773500400),
+                                              turno("t2", [usuario("u2", "Segundo turno.")], 1773586800)]})
+                program = self.program(amb)
+                call = program.AppServer.call
+
+                def fail_first_listing(server, method, params):
+                    if method == "thread/turns/list":
+                        raise program.Failure("synthetic first turn listing failure")
+                    return call(server, method, params)
+
+                with patch.object(program.AppServer, "call", new=fail_first_listing):
+                    code, output = self.in_process(amb, program, ["rodada", "--conversa", CONVERSA_B1])
+                self.assertEqual(code, 1, output)
+                placeholder = amb.pasta_conversa(data="2026-03-13")
+                self.assertTrue(placeholder.is_dir())
+                self.assertEqual(list(placeholder.iterdir()), [])
+                self.assertIn(placeholder.name, le(amb.d(1)))
+                self.assertEqual(amb.chamadas(), [])
+                self.sucesso(amb.rodada(respostas=("rodada-nada-relevante",)), "review 10")
+                self.assertTrue(amb.d(2).is_file(), "The resumed copy kept the createdAt date instead of first startedAt")
+                self.assertTrue(amb.d(3).is_file())
+                self.assertTrue(amb.d(7).is_file())
+                self.assertFalse(placeholder.exists())
+                self.assertEqual(list((amb.doc / TEXTO["conversas"]).iterdir()), [amb.pasta_conversa()])
+                self.assertIn(amb.pasta_conversa().name, le(amb.d(1)))
+                self.assertNotIn(placeholder.name, le(amb.d(1)))
+                self.assertNotIn("synthetic first turn listing failure", le(amb.d(1)))
+                state = json_de(next((amb.dados / "conversas").glob("*.json")))
+                self.assertEqual(state["folder"], amb.pasta_conversa().name)
+                before = amb.d(2).read_bytes()
+                self.sucesso(amb.rodada(respostas=("rodada-nada-relevante",)), "review 10")
+                self.assertEqual(amb.d(2).read_bytes(), before)
 
     def test_review_08_subject_and_each_paragraph_require_valid_sources(self):
         """Anexo E. Missing, malformed, non-message and inverted sources fail."""

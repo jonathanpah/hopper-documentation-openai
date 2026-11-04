@@ -689,7 +689,8 @@ class AppServer:
 
 HEADER = re.compile(r"^## (M(\d+)-([a-zA-Z0-9-]+)) · ([^\n]+) · ([^\n]+)\n"
                     r"<!-- registros: ([^\s/]+/[^\s/]+) ([^\s/]+/[^\s/]+) -->\n", re.M)
-BODY_LENGTH = re.compile(r"\n<!-- corpo: (\d+) -->\n\n")
+BODY_LENGTH = re.compile(r"\n<!-- corpo: (\d+)( escapado)? -->\n\n")
+BODY_HEADER = re.compile(r"^\\*## M\d+-", re.M)
 ITEM_ID = re.compile(r"^(PD|D|F)(\d+)-([a-zA-Z0-9-]+)$")
 REFERENCE = re.compile(r"\b(?:PD|D|F|M)\d+-[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\b")
 PROVISIONAL = re.compile(r"(?<![a-zA-Z0-9_-])N\d+(?![a-zA-Z0-9_-])")
@@ -720,14 +721,17 @@ def messages(text):
                     raise Failure("delimitador do corpo de mensagem inválido")
                 # Skip the complete literal body before looking for a header.
                 position = body_end + 1
-            starts.append((match, body_start, body_end))
-    for n, (match, body_start, body_end) in enumerate(starts):
+            starts.append((match, body_start, body_end, bool(boundary and boundary[2])))
+    for n, (match, body_start, body_end, escaped) in enumerate(starts):
         end = starts[n + 1][0].start() if n + 1 < len(starts) else len(text)
         if body_end is not None:
             end = body_end
+        body = text[body_start:end].strip("\n")
+        if escaped:
+            body = re.sub(r"^\\(?=\\*## M\d+-)", "", body, flags=re.M)
         result.append({"id": match[1], "n": int(match[2]), "code": match[3], "time": match[4],
                        "author": match[5], "first": match[6], "last": match[7],
-                       "text": text[body_start:end].strip("\n"), "raw": text[match.start():end].strip("\n")})
+                       "text": body, "raw": text[match.start():end].strip("\n")})
     return result
 
 
@@ -828,11 +832,16 @@ def render_item(item, runtime):
 
 def format_message(number, runtime, turn, author, text, first, last):
     text = text.strip("\n")
-    # Keep the ordinary Anexo E representation byte-for-byte. Ambiguous bodies
-    # carry their length in a comment, so quoted headers cannot create messages.
-    # Frame a literal leading length comment too, preventing forged framing.
-    if HEADER.search(text + "\n") or text.startswith("<!-- corpo:"):
-        text = "<!-- corpo: {} -->\n\n{}".format(len(text), text)
+    # Frozen F2 ignores length comments. Add one Markdown escape before every
+    # body line starting with ## M<digits>-, with or without a records comment.
+    # Escape pre-existing backslash prefixes too, so the "escapado" length
+    # marker lets messages() undo exactly one backslash without changing old
+    # unmarked bodies. Ordinary text stays byte-for-byte; literal leading
+    # length comments are framed too, preventing forged framing.
+    escaped = BODY_HEADER.sub(lambda match: "\\" + match[0], text)
+    if escaped != text or text.startswith("<!-- corpo:"):
+        marker = " escapado" if escaped != text else ""
+        text = "<!-- corpo: {}{} -->\n\n{}".format(len(escaped), marker, escaped)
     return ("## M{}-{} · {} · {}\n<!-- registros: {}/{} {}/{} -->\n\n{}\n".format(
         number, runtime.code, display_time(local_time(turn["startedAt"])), author,
         turn["id"], first, turn["id"], last, text.strip("\n")))
@@ -900,6 +909,15 @@ def copy_history(runtime, deadline=None, hook=False):
             if not previous:
                 with runtime.folder_lock(deadline):
                     first_timestamp = turns[0]["startedAt"] if turns else thread.get("createdAt", 0)
+                    runtime.started_at = first_timestamp
+                    # An initial failure can reserve an empty createdAt folder
+                    # for the index. Release only that empty placeholder when
+                    # the first turn supplies R02's date; keep populated and
+                    # migrated folders in place.
+                    expected = local_time(first_timestamp).strftime("%Y-%m-%d") + "-" + runtime.code
+                    if (turns and runtime.folder.name != expected and runtime.folder.is_dir() and
+                            not any(runtime.folder.iterdir())):
+                        checked(runtime.folder, runtime.doc).rmdir()
                     select_folder(runtime, first_timestamp)
                     path = runtime.folder / T["files"][2]
                     if not original:
