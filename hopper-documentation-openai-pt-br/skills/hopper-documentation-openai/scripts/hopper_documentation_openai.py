@@ -642,9 +642,10 @@ class AppServer:
         self.sequence += 1
         identity = self.sequence
         self.send({"id": identity, "method": method, "params": params})
-        # Allow process startup separately; a stalled history page must not
-        # consume the complete copy deadline before it can be reported.
-        end = time.monotonic() + (120 if method == "initialize" else 30) * scale()
+        # Keep a one-second floor for process startup and responses at small
+        # test scales. The caller's copy deadline still takes precedence.
+        timeout = 120 if method == "initialize" else 30
+        end = time.monotonic() + max(1.0, timeout * scale())
         if self.deadline is not None:
             end = min(end, self.deadline)
         while time.monotonic() < end:

@@ -11,11 +11,65 @@ from unittest.mock import patch
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'aceite/testes'))
-from apoio import (CONVERSA_B1, IDIOMA, PREFIXO, TEXTO, CasoDeAceite,
-                   espera, grava_json, itens, json_de, le, linhas_json, turno, usuario)
+from apoio import (CONVERSA_B1, IDIOMA, PREFIXO, SIMULADO, TEXTO, CasoDeAceite,
+                   espera, grava_json, itens, json_de, le, linhas_json, mensagens, turno, usuario)
 
 
 class ExecutionV2(CasoDeAceite):
+    def slow_reader_startup(self, seconds):
+        launcher = self.amb.dados / 'leitor-lento'
+        launcher.write_text(
+            '#!' + sys.executable + '\nimport runpy\nimport sys\nimport time\n'
+            'if sys.argv[1:2] == ["app-server"]:\n    time.sleep(' + repr(seconds) + ')\n'
+            'runpy.run_path(' + repr(str(SIMULADO)) + ', run_name="__main__")\n',
+            encoding='utf-8')
+        launcher.chmod(0o755)
+        self.amb.configura(executavel=str(launcher))
+
+    def test_reader_startup_has_a_floor_at_small_time_scale(self):
+        """G12/T23/T24. Real process startup must survive a 0.002 time scale."""
+        self.amb.historico_b1()
+        self.slow_reader_startup(0.5)
+        result = self.amb.rodada(escala='0.002', tempo=10)
+        self.sucesso(result, 'G12/T23/T24')
+        self.assertEqual(len(mensagens(le(self.amb.d(2)))), 14)
+        self.assertTrue(self.amb.d(3).is_file())
+        self.assertTrue(self.amb.d(7).is_file())
+        self.assertEqual(len(self.amb.chamadas()), 1)
+
+    def test_reader_pages_have_a_floor_at_small_time_scale(self):
+        """G12. Slow turn and item pages must remain readable in both history modes."""
+        variants = [('paginated', 'thread/turns/list'), ('paginated', 'thread/items/list'),
+                    ('legacy', 'thread/turns/list')]
+        for number, (mode, method) in enumerate(variants):
+            with self.subTest(mode=mode, method=method):
+                amb = self.amb if number == 0 else self.novo_ambiente()
+                amb.grava_historico({'thread': {'id': CONVERSA_B1, 'historyMode': mode},
+                    'turns': [turno('t1', [usuario('u1', 'Primeira mensagem.'),
+                                           usuario('u2', 'Segunda mensagem.')]),
+                              turno('t2', [usuario('u3', 'Terceira mensagem.')], 1773500460)],
+                    'opcoes': {'pagina_turnos': 1, 'pagina_registros': 1,
+                               'atraso': {'metodo': method, 'turno': 't1', 'segundos': 150}}})
+                result = amb.rodada(respostas=('rodada-nada-relevante',), escala='0.002', tempo=10)
+                self.sucesso(result, 'G12/pages')
+                self.assertEqual([message[3].strip() for message in mensagens(le(amb.d(2)))],
+                                 ['Primeira mensagem.', 'Segunda mensagem.', 'Terceira mensagem.'])
+                self.assertTrue(any(row['method'] == method and row['params'].get('cursor')
+                                    for row in amb.rpc()))
+
+    def test_copy_deadline_still_limits_slow_reader_startup(self):
+        """R22/G12. The scaled 100-second limit takes precedence over the reader floor."""
+        self.amb.historico_b1()
+        self.slow_reader_startup(0.5)
+        result = self.amb.copia(escala='0.002', tempo=3)
+        self.sucesso(result, 'R22/G12')
+        self.assertEqual(json.loads(result.stdout), {})
+        self.assertTrue(any(row['etapa'] == 'copia' and row['resultado'] == 'falhou'
+                            and 'prazo de leitura' in row['motivo'] for row in self.amb.rodadas()))
+        self.assertFalse(self.amb.servidores(), 'The reader outlived the scaled copy deadline')
+        self.assertFalse(self.amb.rpc())
+        self.assertFalse(self.amb.chamadas())
+
     def test_round_completion_is_logged_after_all_writer_parts_finish(self):
         self.amb.grava_historico({'thread': {'id': CONVERSA_B1, 'historyMode': 'paginated'},
             'turns': [turno('t1', [usuario('p%d' % n, 'Parte %d. ' % n + 'palavra ' * 100)
