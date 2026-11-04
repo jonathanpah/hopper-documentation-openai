@@ -2,22 +2,24 @@
 
 Plugin do Codex que registra a conversa em 7 documentos Markdown, a pedido e antes de toda compactação. O redator usa **gpt-6-luna, esforço xhigh**, em processo separado. Preserva o modelo e o esforço da conversa principal.
 
-Este pacote contém a versão **2.0.0**. Instale a partir de uma tag publicada ou de um ZIP de release conferido.
+Este pacote contém a versão **2.0.0**. Instale pelo GitHub a partir de uma tag publicada.
 
 ## Instalação e uso
 
 Requer Python 3.9 ou mais novo e Codex autenticado com app-server e hooks compatíveis. Usa somente a biblioteca padrão do Python. O plugin atende macOS e Linux. Não exige outra chave de API.
 
-Baixe `hopper-documentation-openai-2.0.0-pt-br.zip` e `SHA256SUMS` da [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) quando publicados. Confira o SHA-256 e extraia o ZIP em uma pasta permanente. O manifesto `.codex-plugin/plugin.json` deve ficar diretamente nessa pasta.
+Baixe `hopper-documentation-openai-2.0.0-pt-br.zip` e `SHA256SUMS` da [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) quando publicados. Confira o SHA-256 e o conteúdo contra a tag.
 
-Para uma instalação nova, execute os comandos abaixo com o caminho da pasta extraída.
+Para atualizar uma instalação existente, substitua `<tag>` por uma tag publicada e execute os 4 comandos na ordem abaixo. Para uma instalação nova, execute os 2 últimos.
 
 ```sh
-codex plugin marketplace add /caminho/absoluto/pacote-conferido
+codex plugin remove hopper-documentation-openai@hopper-documentation-openai
+codex plugin marketplace remove hopper-documentation-openai
+codex plugin marketplace add jonathanpah/hopper-documentation-openai --ref <tag>
 codex plugin add hopper-documentation-openai@hopper-documentation-openai
 ```
 
-Na atualização, remova o plugin e o catálogo anteriores antes desses comandos. Mantenha 1 idioma instalado por conta. Confira os arquivos instalados contra a tag. Revise os 2 comandos em `/hooks` no terminal ou em **Settings > Hooks** no aplicativo e abra uma sessão nova. Instalar não concede confiança aos hooks.
+Mantenha 1 idioma instalado por conta. Confira os arquivos instalados contra a tag. Revise os 2 comandos em `/hooks` no terminal ou em **Settings > Hooks** no aplicativo e abra uma sessão nova. Instalar não concede confiança aos hooks.
 
 Use `$hopper-documentation-openai:hopper-documentation-openai` ou peça para documentar a conversa. A skill inicia a rodada, acompanha sua conclusão e repete a linha final. Explicar, revisar ou editar a skill não inicia documentação.
 

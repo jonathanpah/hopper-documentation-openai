@@ -36,7 +36,7 @@ codex plugin add hopper-documentation-openai@hopper-documentation-openai
 
 A release final usa `v2.0.0`; as instalações de teste usam a tag escolhida pelo executor. Confira os arquivos instalados contra a tag. Revise os 2 comandos em `/hooks` ou em **Settings > Hooks** no aplicativo. A confiança depende da definição instalada. Abra uma sessão nova depois da troca.
 
-Para instalar em inglês, use o catálogo do ZIP correspondente baixado da [release](https://github.com/jonathanpah/hopper-documentation-openai/releases), depois de conferir `SHA256SUMS` e o conteúdo. Os 2 guias descrevem esse procedimento.
+A instalação pelo GitHub usa o catálogo da raiz, que seleciona o pacote em português. Os ZIPs dos 2 idiomas ficam na [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) para conferência de `SHA256SUMS` e do conteúdo.
 
 Antes de habilitar os hooks em uma atualização com documentos antigos, configure `migracao_automatica` como `false`. Confira a configuração pelo comando `config` e prepare a migração conforme o [guia em português](hopper-documentation-openai-pt-br/README.md#configuração-e-migração).
 
