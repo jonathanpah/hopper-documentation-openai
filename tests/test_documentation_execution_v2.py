@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from unittest.mock import Mock, patch
 
 sys.dont_write_bytecode = True
@@ -91,6 +92,96 @@ if sys.argv[1:2] == ['app-server']:
             encoding='utf-8')
         launcher.chmod(0o755)
         self.amb.configura(executavel=str(launcher))
+
+    def slow_reader_shutdown(self, seconds):
+        """Delay SIGTERM in the temporary simulator, never in the shipped program."""
+        marker = self.amb.registro_simulado / 'encerramentos-lentos.jsonl'
+        launcher = self.amb.dados / 'leitor-encerramento-lento'
+        launcher.write_text(
+            '#!' + sys.executable + '\nimport json\nimport os\nimport runpy\n'
+            'import signal\nimport sys\nimport time\nfrom pathlib import Path\n'
+            'if sys.argv[1:2] == ["app-server"]:\n'
+            '    def stop(signum, frame):\n'
+            '        with Path(' + repr(str(marker)) + ').open("a", encoding="utf-8") as stream:\n'
+            '            stream.write(json.dumps({"pid": os.getpid()}) + "\\n")\n'
+            '        time.sleep(' + repr(seconds) + ')\n'
+            '        raise SystemExit(0)\n'
+            '    signal.signal(signal.SIGTERM, stop)\n'
+            'runpy.run_path(' + repr(str(SIMULADO)) + ', run_name="__main__")\n',
+            encoding='utf-8')
+        launcher.chmod(0o755)
+        self.amb.configura(executavel=str(launcher))
+        return marker
+
+    def test_reader_shutdown_waits_fit_the_remaining_deadline(self):
+        """R22. Both graceful shutdown and reaping share the time still available."""
+        spec = importlib.util.spec_from_file_location('documentation_shutdown_test', self.amb.programa)
+        program = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(program)
+        elapsed = [9.75]
+        deadline = 10.0
+        process = Mock(stdin=io.BytesIO())
+        process.poll.return_value = None
+        process.terminate.side_effect = lambda: elapsed.__setitem__(0, elapsed[0] + 0.1)
+        reaped = []
+
+        def wait(timeout=None):
+            self.assertIsNotNone(timeout, 'Reader reaping must have a deadline')
+            self.assertLessEqual(timeout, max(0, deadline - elapsed[0]))
+            needed = 0.03 if process.kill.called else 0.5
+            elapsed[0] += min(timeout, needed)
+            if timeout < needed:
+                raise subprocess.TimeoutExpired('synthetic-reader', timeout)
+            reaped.append(True)
+            return 0
+
+        process.wait.side_effect = wait
+        selector = Mock()
+        selector.select.return_value = [True]
+        response = b'{"id": 1, "result": {}}\n'
+        runtime = Mock(executable='synthetic-reader', data=self.amb.dados)
+        with patch.dict(os.environ, {PREFIXO + 'ESCALA_DE_TEMPO': '1'}), \
+                patch.object(program, 'time', Mock(monotonic=lambda: elapsed[0])), \
+                patch.object(program.subprocess, 'Popen', return_value=process), \
+                patch.object(program.selectors, 'DefaultSelector', return_value=selector), \
+                patch.object(program.os, 'read', return_value=response):
+            with program.AppServer(runtime, deadline=deadline):
+                pass
+        self.assertTrue(reaped, 'The reader must be reaped before returning')
+        process.kill.assert_called_once_with()
+        self.assertLessEqual(elapsed[0], deadline)
+        self.assertTrue(process.stdin.closed)
+        process.stdout.close.assert_called_once_with()
+
+    def test_copy_reserves_time_for_slow_reader_shutdown(self):
+        """R22. A blocked page and slow SIGTERM must leave saved messages recoverable."""
+        case = {'thread': {'id': CONVERSA_B1, 'historyMode': 'paginated'},
+                'turns': [turno('t1', [usuario('u1', 'Antes do atraso.')]),
+                          turno('t2', [usuario('u2', 'Depois do atraso.')], 1773500460)],
+                'opcoes': {'atraso': {'turno': 't2', 'segundos': 150}}}
+        self.amb.grava_historico(case)
+        marker = self.slow_reader_shutdown(0.5)
+        started = time.monotonic()
+        result = self.amb.copia(escala='0.03', tempo=6)
+        elapsed = time.monotonic() - started
+        self.sucesso(result, 'R22/slow shutdown')
+        self.assertEqual(json.loads(result.stdout), {})
+        self.assertLessEqual(elapsed, 3.2, 'R22: slow reader shutdown exceeded the copy limit')
+        self.assertTrue(linhas_json(marker), 'The slow shutdown handler was not exercised')
+        for server in self.amb.servidores():
+            with self.assertRaises(ProcessLookupError):
+                os.kill(server['pid'], 0)
+        saved = self.amb.d(2).read_bytes()
+        self.assertEqual(len(mensagens(saved.decode('utf-8'))), 1)
+        self.assertTrue(any(row['etapa'] == 'copia' and row.get('motivo')
+                            for row in self.amb.rodadas()))
+        self.assertFalse(self.amb.chamadas())
+        case.pop('opcoes')
+        self.amb.grava_historico(case)
+        self.amb.configura(executavel=str(self.amb.simulado))
+        self.sucesso(self.amb.rodada(respostas=('rodada-nada-relevante',)), 'R22/recovery')
+        self.assertTrue(self.amb.d(2).read_bytes().startswith(saved))
+        self.assertEqual(len(mensagens(le(self.amb.d(2)))), 2)
 
     def test_reader_startup_has_a_floor_at_small_time_scale(self):
         """G12/T23/T24. Simulate 2 s per response without wall-clock timing."""

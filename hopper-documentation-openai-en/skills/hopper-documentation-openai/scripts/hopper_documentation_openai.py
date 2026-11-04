@@ -618,10 +618,11 @@ def ocultar(text):
 
 class AppServer:
     """Read-only JSON-RPC, with a deadline covering a blocked native response."""
-    def __init__(self, runtime, arguments=None, cwd=None, deadline=None):
+    def __init__(self, runtime, arguments=None, cwd=None, deadline=None, close_deadline=None):
         self.runtime = runtime
         self.sequence, self.buffer = 0, bytearray()
         self.deadline = deadline
+        self.close_deadline = close_deadline if close_deadline is not None else deadline
         self.process = subprocess.Popen(
             [runtime.executable, "app-server", "--listen", "stdio://"] +
             (arguments if arguments is not None else ["--disable", "hooks", "--disable", "plugins"]),
@@ -677,15 +678,22 @@ class AppServer:
 
     def close(self):
         self.selector.close()
-        if self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5 * scale())
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
-        for stream in (self.process.stdin, self.process.stdout):
-            stream.close()
+        try:
+            if self.process.poll() is None:
+                self.process.terminate()
+                timeout = 5 * scale()
+                if self.close_deadline is not None:
+                    # Keep half of the remaining time for killing and reaping.
+                    timeout = min(timeout, max(0, self.close_deadline - time.monotonic()) / 2)
+                try:
+                    self.process.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+                    left = None if self.close_deadline is None else max(0, self.close_deadline - time.monotonic())
+                    self.process.wait(timeout=left)
+        finally:
+            for stream in (self.process.stdin, self.process.stdout):
+                stream.close()
 
     def __enter__(self):
         return self
@@ -856,10 +864,16 @@ def format_message(number, runtime, turn, author, text, first, last):
 
 def copy_history(runtime, deadline=None, hook=False):
     """C01/C10. Advance only from a native item anchor or a completed status."""
+    close_deadline = deadline
+    if hook and deadline is not None:
+        # R22 includes shutdown, saving and the hook's final log in its 100 s.
+        # Stop work at 90 s, reap the reader by 95 s and leave 5 s to return.
+        close_deadline = deadline - 5 * scale()
+        deadline -= 10 * scale()
     with runtime.lock("copia-" + short_name(runtime.conversation), 20 if hook else 900, deadline):
         if hook and deadline - time.monotonic() < 10 * scale():
             raise Failure("menos de 10 segundos disponíveis para a cópia")
-        with AppServer(runtime, deadline=deadline) as server:
+        with AppServer(runtime, deadline=deadline, close_deadline=close_deadline) as server:
             try:
                 thread = server.call("thread/read", {"threadId": runtime.conversation, "includeTurns": False})["thread"]
             except RPCFailure as error:
