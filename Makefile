@@ -1,10 +1,19 @@
 PYTHON ?= python3
 
-.PHONY: build test check
+.PHONY: build test test-acceptance check
 build:
-	$(PYTHON) scripts/build.py
+	$(PYTHON) -B scripts/build.py
 
 test:
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m unittest discover -s tests -v
+	@set -e; for language in pt-br en; do \
+		TZ=UTC HOPPER_DOCUMENTATION_OPENAI_PACOTE=hopper-documentation-openai-$$language \
+		$(PYTHON) -B -m unittest discover -s tests -v; \
+	done
 
-check: build test
+test-acceptance:
+	@set -e; for language in pt-br en; do \
+		TZ=UTC HOPPER_DOCUMENTATION_OPENAI_PACOTE=hopper-documentation-openai-$$language \
+		$(PYTHON) -B -m unittest discover -s aceite/testes -v; \
+	done
+
+check: build test test-acceptance

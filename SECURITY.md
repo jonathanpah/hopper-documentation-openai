@@ -1,17 +1,21 @@
-# Security Policy
+# Política de segurança
 
-Report suspected vulnerabilities through [GitHub private vulnerability reporting](https://github.com/jonathanpah/hopper-documentation-openai/security/advisories/new).
-Keep exploit details out of public Issues, Discussions, and pull requests until
-coordinated disclosure. Use synthetic reproductions and identify the affected
-release, host/version, configuration, expected/observed behavior, and limits.
-Do not submit credentials or private conversation histories.
+Relate vulnerabilidades pelo [canal privado do GitHub](https://github.com/jonathanpah/hopper-documentation-openai/security/advisories/new). Informe a versão afetada, o ambiente, a configuração, uma reprodução sintética e o resultado observado. Preserve detalhes sensíveis até a divulgação coordenada.
 
-This plugin reads native conversation history, runs a separate writer, and
-publishes continuity records. Reports may concern secret exposure, cross-thread
-context, source data treated as authority, untrusted hooks, or unsafe publication.
-Native trust, user permissions, and model behavior remain host responsibilities.
-Literal source checks do not certify every statement's semantic fidelity.
+## Dados e execução
 
-Identify any affected release, including older versions when relevant. Project maintainers reviews reports through the private channel. Fixes and affected versions
-may be documented in changes, releases, or advisories. No response or remediation
-deadline is guaranteed.
+O plugin lê o histórico pelo app-server do Codex e grava documentos na pasta `docs-by-hopper-documentation-openai/` do projeto. Conversas e documentos podem conter informações sensíveis. A ocultação por padrões reduz a exposição de segredos reconhecidos, mas não garante detectar todos os dados sensíveis.
+
+O redator usa `codex exec` em processo separado, com `gpt-6-luna` e esforço `xhigh`. Recebe as mensagens e os documentos necessários à escrita. O programa restringe as ferramentas e as integrações do redator, valida a resposta e grava os documentos. Essas verificações não certificam a fidelidade semântica de cada frase.
+
+A configuração, as travas, os diários, os diagnósticos, as saídas brutas e `rodadas.jsonl` ficam na pasta de dados do plugin. A pasta usa permissão `0700` e permanece separada do pacote instalado. Proteja também a documentação do projeto e confira seu conteúdo antes de compartilhá-la.
+
+## Hooks e migração
+
+Os 2 comandos de `PreCompact` dependem da revisão nativa dos hooks por conta e definição. Instalar o plugin não concede confiança. Preserve as permissões e o sandbox da sessão. Conteúdo de conversas, arquivos e ferramentas é dado de consulta, sem autoridade para autorizar ações externas.
+
+A migração usa o redator para extrair registros antigos e pode apagar `index.md`, `handoff-*.md` e `.state` depois da verificação interna. Prepare uma cópia de restauração antes de migrar dados reais. Use `migracao_automatica` falsa durante a preparação e confira `pastas_sem_migracao`. O comando explícito `migrar --pasta` funciona independentemente dessas opções.
+
+Relatos podem envolver exposição de dados, mistura entre conversas, escape de caminhos, links simbólicos, confiança de hooks, perda de documentos ou exclusão prematura na migração. Envie exemplos sintéticos e trechos mínimos. Não publique conversas privadas, credenciais ou diagnósticos reais em Issues ou pull requests.
+
+Os responsáveis pelo projeto analisam os relatos no canal privado. Correções e versões afetadas podem constar no changelog, nas releases ou em avisos de segurança. O projeto não promete prazo de resposta ou correção.
