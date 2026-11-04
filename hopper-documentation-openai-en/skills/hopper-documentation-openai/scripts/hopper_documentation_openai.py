@@ -1225,7 +1225,8 @@ WRITER_CONFIG = ["-c", 'model_reasoning_effort="xhigh"', "-c", 'web_search="disa
 
 def isolated_writer(runtime, temporary):
     """C03/D-02. Verify skills and every non-user MCP configuration layer."""
-    base = ["--ignore-rules", *WRITER_CONFIG]
+    # --ignore-rules is accepted by exec, but not by app-server (Codex 0.166.0).
+    base = list(WRITER_CONFIG)
     for feature in DISABLED_FEATURES:
         base += ["--disable", feature]
 

@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 from unittest.mock import patch
 
@@ -16,6 +17,71 @@ from apoio import (CONVERSA_B1, IDIOMA, PREFIXO, SIMULADO, TEXTO, CasoDeAceite,
 
 
 class ExecutionV2(CasoDeAceite):
+    def strict_app_server(self):
+        """Freeze the option names from `codex app-server --help` 0.166.0."""
+        values = ('-c', '--config', '--enable', '--disable', '--startup-client-info',
+                  '--cloud-skills-snapshot', '--code-mode-host', '--listen', '--ws-auth',
+                  '--ws-token-file', '--ws-token-sha256', '--ws-shared-secret-file',
+                  '--ws-issuer', '--ws-audience', '--ws-max-clock-skew-seconds')
+        flags = ('--startup-sign-out', '--print-startup-config', '--strict-config',
+                 '--stdio', '--analytics-default-enabled', '-h', '--help')
+        launcher = self.amb.dados / 'codex-cli-0166'
+        launcher.write_text('#!' + sys.executable + '\n' +
+            'values = ' + repr(values) + '\nflags = ' + repr(flags) + '\n' + '''
+import runpy
+import sys
+from pathlib import Path
+
+if sys.argv[1:2] == ['app-server']:
+    arguments = iter(sys.argv[2:])
+    for argument in arguments:
+        option, separator, value = argument.partition('=')
+        if option not in values + flags or (option in flags and separator):
+            message = "error: unexpected argument '%s' found" % option
+            with Path(__file__ + '.errors').open('a', encoding='utf-8') as errors:
+                errors.write(message + '\\n')
+            print(message, file=sys.stderr)
+            raise SystemExit(2)
+        if option in values and not separator:
+            if next(arguments, None) is None:
+                print("error: a value is required for '%s'" % option, file=sys.stderr)
+                raise SystemExit(2)
+''' + 'runpy.run_path(' + repr(str(SIMULADO)) + ', run_name="__main__")\n',
+            encoding='utf-8')
+        launcher.chmod(0o755)
+        self.amb.configura(executavel=str(launcher))
+        return launcher
+
+    def test_strict_app_server_rejects_options_absent_from_real_help(self):
+        """G12/D-18. The fake must fail before its permissive RPC delegate."""
+        launcher = self.strict_app_server()
+        for option in ('--ignore-rules', '--ignore-user-config', '--unknown-option', '--lis'):
+            with self.subTest(option=option):
+                result = subprocess.run([str(launcher), 'app-server', '--listen', 'stdio://', option],
+                                        capture_output=True, text=True, timeout=5,
+                                        env=self.amb.ambiente(), cwd=str(self.amb.raiz))
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stderr.strip(), "error: unexpected argument '%s' found" % option)
+        self.assertFalse(self.amb.servidores())
+        self.assertFalse(self.amb.rpc())
+
+    def test_round_writes_with_only_real_app_server_options(self):
+        """G12/D-18. All readers must pass the real CLI option boundary."""
+        self.amb.historico_b1()
+        launcher = self.strict_app_server()
+        result = self.amb.rodada()
+        errors = Path(str(launcher) + '.errors')
+        self.sucesso(result, 'G12/D-18\n' + (le(errors) if errors.is_file() else ''))
+        self.assertFalse(errors.exists())
+        self.assertEqual(len(mensagens(le(self.amb.d(2)))), 14)
+        for number in (3, 7):
+            self.assertTrue(self.amb.d(number).is_file())
+            self.assertIn('M14-', le(self.amb.d(number)))
+        self.terminou('G12/D-18')
+        self.assertEqual(len(self.amb.chamadas()), 1)
+        self.assertIn('--ignore-rules', self.amb.chamadas()[0]['argv'])
+        self.assertEqual(sum(row['method'] == 'config/read' for row in self.amb.rpc()), 2)
+
     def slow_reader_startup(self, seconds):
         launcher = self.amb.dados / 'leitor-lento'
         launcher.write_text(
