@@ -1014,7 +1014,14 @@ def copy_history(runtime, deadline=None, hook=False):
                         group.append(body)
                     emit()
                     status = turn.get("status")
-                    if status in ("interrupted", "failed"):
+                    # A separate reader can reconstruct the live last turn as
+                    # interrupted. Keep its native anchor until there is a
+                    # successor, a completion timestamp, or an explicit failure
+                    # diagnostic on the failed turn (also in older histories).
+                    finished = (turn_index < len(turns) - 1 or
+                                type(turn.get("completedAt")) is int or
+                                (status == "failed" and bool((turn.get("error") or {}).get("message"))))
+                    if status in ("interrupted", "failed") and finished:
                         body = T["interrupted"] if status == "interrupted" else T["turn_failure"].format(
                             ocultar(str((turn.get("error") or {}).get("message") or ""))[:200])
                         number += 1
@@ -1148,16 +1155,21 @@ def validate_content(value):
 
 def validate_simplified(text, existing_messages):
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text.strip()) if paragraph.strip()]
-    subject = re.fullmatch(re.escape(T["subject"]) + r"([^\r\n]+)\*\*", paragraphs[0])
+    # Retain the writer's paragraph text and separators; only mixed source
+    # lists need rewriting. Document 3 sources must contain messages alone.
+    parts = re.split(r"(\n\s*\n)", text)
+    paragraphs = [index for index in range(0, len(parts), 2) if parts[index].strip()]
+    subject = (re.fullmatch(re.escape(T["subject"]) + r"([^\r\n]+)\*\*", parts[paragraphs[0]].strip())
+               if paragraphs else None)
     if not subject or not subject[1].strip(" *") or len(paragraphs) < 2:
         raise Failure("conversa simplificada sem assunto ou parágrafos válidos")
     rejected = []
-    for paragraph in paragraphs[1:]:
-        ending = re.search(r"\(([^()\r\n]+)\)$", paragraph.strip())
+    for index in paragraphs[1:]:
+        ending = re.search(r"\(([^()\r\n]+)\)$", parts[index].rstrip())
         if not ending:
             raise Failure("parágrafo da conversa simplificada sem mensagens de origem ao fim")
-        for origin in ending[1].split(","):
+        sources, origins = ending[1].split(","), []
+        for origin in sources:
             origin = origin.strip()
             match = RANGE.fullmatch(origin)
             if match:
@@ -1170,11 +1182,20 @@ def validate_simplified(text, existing_messages):
                 if len(numbers) != int(match[3]) - int(match[1]) + 1:
                     rejected.append(origin)
             elif not re.fullmatch(r"M\d+-[a-zA-Z0-9-]+", origin):
-                raise Failure("origem de parágrafo deve citar mensagens")
+                if not origin or origin.startswith("M"):
+                    raise Failure("origem de parágrafo deve citar mensagens")
+                continue
             elif origin not in existing_messages:
                 rejected.append(origin)
+            origins.append(origin)
+        if not origins:
+            raise Failure("origem de parágrafo deve citar mensagens")
+        if len(origins) != len(sources):
+            parts[index] = (parts[index][:ending.start(1)] + ", ".join(origins) +
+                            parts[index][ending.end(1):])
     if rejected:
         raise ReferencesRejected(rejected)
+    return "".join(parts)
 
 
 def validate_response(response, new_messages, existing_items, existing_messages):
@@ -1197,7 +1218,8 @@ def validate_response(response, new_messages, existing_items, existing_messages)
     if response["nada_relevante"] and (response["itens_novos"] or response["mudancas"]):
         raise Failure("resposta sem conteúdo relevante contém alterações")
     if not response["nada_relevante"]:
-        validate_simplified(response["conversa_simplificada"], existing_messages | new_messages)
+        response["conversa_simplificada"] = validate_simplified(
+            response["conversa_simplificada"], existing_messages | new_messages)
     rejected = []
     for item in response["itens_novos"] + response["mudancas"]:
         rejected.extend(origin for origin in item["origem"]
