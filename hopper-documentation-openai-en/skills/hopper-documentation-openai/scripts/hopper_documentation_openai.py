@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 
 LANGUAGE = "en"
 MODEL = "gpt-6-luna"
@@ -234,6 +235,15 @@ SCHEMA = object_schema({
         "id": {"type": "string"}, "situacao": {"type": "string"}, "origem": ORIGINS_SCHEMA})},
     "handoff": object_schema({k: {"type": "string"} for k in HANDOFF_KEYS}),
 })
+MIGRATION_SCHEMA = object_schema({
+    **{k: v for k, v in SCHEMA['properties'].items() if k not in ('conversa_simplificada', 'handoff')},
+    'itens_novos': {'type': 'array', 'items': object_schema({
+        **ITEM_SCHEMA['properties'], 'conversa': {'type': 'string'}})},
+    'handoffs_antigos': {'type': 'array', 'items': object_schema({
+        'conversa': {'type': 'string'}, 'resumo': {'type': 'string', 'maxLength': 80},
+        'handoff': SCHEMA['properties']['handoff']})},
+    'sem_conteudo': {'type': 'array', 'items': {'type': 'string'}},
+})
 
 
 class Failure(Exception):
@@ -437,8 +447,8 @@ class Runtime:
             finally:
                 fcntl.flock(stream, fcntl.LOCK_UN)
 
-    def folder_lock(self):
-        return self.lock("pasta-" + short_name(self.doc))
+    def folder_lock(self, deadline=None):
+        return self.lock("pasta-" + short_name(self.doc), deadline=deadline)
 
     def choose_executable(self):
         configured = self.config["executavel"]
@@ -711,8 +721,9 @@ def select_folder(runtime, first_timestamp):
     """Reuse a migrated folder and disambiguate equal 8-character suffixes."""
     base = runtime.doc / T["conversations"]
     code = runtime.conversation.replace("-", "")[-8:]
-    for width in (8, 12):
-        code = runtime.conversation.replace("-", "")[-width:]
+    candidates = ([runtime.conversation] if runtime.conversation.startswith('antigo') else
+                  [runtime.conversation.replace('-', '')[-width:] for width in (8, 12)])
+    for index, code in enumerate(candidates):
         collision = False
         for folder in sorted(base.glob("*-" + code)):
             if folder.is_symlink() or any((folder / T["files"][n]).is_symlink() for n in (2, 3, 7)):
@@ -728,7 +739,7 @@ def select_folder(runtime, first_timestamp):
             date = local_time(first_timestamp).strftime("%Y-%m-%d")
             runtime.folder = base / (date + "-" + code)
             return
-        if width == 8:
+        if index == 0:
             runtime.log("copia", "em andamento", "colisão do código da conversa; usando 12 caracteres")
     raise Failure("colisão do código de 12 caracteres da conversa")
 
@@ -802,6 +813,8 @@ def format_message(number, runtime, turn, author, text, first, last):
 def copy_history(runtime, deadline=None, hook=False):
     """C01/C10. Advance only from a native item anchor or a completed status."""
     with runtime.lock("copia-" + short_name(runtime.conversation), 20 if hook else 900, deadline):
+        if hook and deadline - time.monotonic() < 10 * scale():
+            raise Failure("menos de 10 segundos disponíveis para a cópia")
         with AppServer(runtime, deadline=deadline) as server:
             try:
                 thread = server.call("thread/read", {"threadId": runtime.conversation, "includeTurns": False})["thread"]
@@ -820,12 +833,7 @@ def copy_history(runtime, deadline=None, hook=False):
                 raise Failure("destino de documentação fora das pastas permitidas")
             if not runtime.project.is_dir() or not runtime.project.stat().st_mode & 0o222:
                 raise Failure("pasta do projeto sem permissão de gravação")
-            old_files = list(runtime.doc.glob("handoff-*.md"))
-            if ((runtime.doc / "index.md").exists() or (runtime.doc / ".state").exists() or old_files):
-                excluded = {str(Path(p).resolve()) for p in runtime.config["pastas_sem_migracao"]}
-                if runtime.config["migracao_automatica"] and str(runtime.project) not in excluded:
-                    raise Failure("migração do formato antigo pendente (U6)")
-            with runtime.folder_lock():
+            with runtime.folder_lock(deadline):
                 select_folder(runtime, thread.get("createdAt", 0))
                 path = runtime.folder / T["files"][2]
                 original = read(path)
@@ -833,6 +841,7 @@ def copy_history(runtime, deadline=None, hook=False):
             anchor = previous[-1]["last"].split("/", 1) if previous else None
             cursor, seen_cursors, turns, seen_turns, found = None, set(), [], set(), False
             while True:
+                check_deadline(deadline)
                 params = {"threadId": runtime.conversation, "sortDirection": "desc", "limit": 100,
                           "itemsView": "notLoaded" if mode == "paginated" else "full"}
                 if cursor:
@@ -860,7 +869,7 @@ def copy_history(runtime, deadline=None, hook=False):
                 runtime.log("copia", "em andamento", "último turno copiado não existe mais no histórico")
                 turns = [turn for turn in turns if turn["id"] > anchor[0]]
             if not previous:
-                with runtime.folder_lock():
+                with runtime.folder_lock(deadline):
                     first_timestamp = turns[0]["startedAt"] if turns else thread.get("createdAt", 0)
                     select_folder(runtime, first_timestamp)
                     path = runtime.folder / T["files"][2]
@@ -886,6 +895,7 @@ def copy_history(runtime, deadline=None, hook=False):
 
             try:
                 for turn_index, turn in enumerate(turns):
+                    check_deadline(deadline)
                     if anchor and found and turn["id"] == anchor[0] and anchor[1] == "status":
                         continue
                     item_anchor = anchor[1] if anchor and found and turn["id"] == anchor[0] else None
@@ -937,6 +947,7 @@ def copy_history(runtime, deadline=None, hook=False):
                             group = []
 
                     for item in entries:
+                        check_deadline(deadline)
                         identity = item.get("id")
                         if not identity:
                             raise Failure("registro do histórico sem identificador")
@@ -1182,12 +1193,14 @@ def isolated_writer(runtime, temporary):
 
 
 def raw_log_path(runtime):
+    if getattr(runtime, 'output_log', None):
+        return checked(runtime.output_log, runtime.data)
     path = checked(runtime.data / "saidas" / (runtime.code + "-" + now().strftime("%Y%m%d-%H%M%S") + ".log"), runtime.data)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def call_writer(runtime, prompt):
+def call_writer(runtime, prompt, schema_definition=None):
     """Fixed model/effort, no fallback; JSON events stay in the data folder."""
     if len(prompt) > limit("ORCAMENTO", 600000):
         raise Failure("entrada grande demais para o redator")
@@ -1197,7 +1210,7 @@ def call_writer(runtime, prompt):
         temporary = Path(temporary)
         extra = isolated_writer(runtime, temporary)
         schema, output = temporary / "esquema.json", temporary / "resposta.json"
-        atomic_json(schema, SCHEMA, runtime.data)
+        atomic_json(schema, schema_definition or SCHEMA, runtime.data)
         command = [runtime.executable, "exec", "--ephemeral", "--ignore-user-config", "--ignore-rules",
                    "--skip-git-repo-check", "-s", "read-only", "-C", str(temporary), "-m", MODEL,
                    *WRITER_CONFIG, *extra]
@@ -1275,16 +1288,30 @@ def next_part(runtime, pending):
         if len(empty) > 500000:
             raise Failure("documentos grandes demais para o redator")
         available = min(part_limit, budget - len(empty))
-        body = "\n\n".join(m["raw"] for m in candidate)
+        body = "\n\n".join(writer_message(m) for m in candidate)
         if len(body) > available and part:
             break
         if len(body) > available:
             body = truncate_for_writer(body, available)
         part, excerpt = candidate, body
         prompt = writer_prompt(runtime, interval, excerpt, documents)
-        if len("\n\n".join(m["raw"] for m in candidate)) > available:
+        if len("\n\n".join(writer_message(m) for m in candidate)) > available:
             break
     return part, prompt, existing_items, existing_messages
+
+
+def writer_message(message):
+    # A closing boundary preserves significant trailing spaces even for readers
+    # that trim whitespace around a tag. The original message remains verbatim.
+    text = message['raw']
+    if text and text[-1].isspace():
+        text += '\n\n<!-- fim da mensagem ' + message['id'] + ' -->'
+    return text
+
+
+def check_deadline(deadline):
+    if deadline is not None and time.monotonic() >= deadline:
+        raise Failure('prazo total da cópia esgotado')
 
 
 def call_validated_writer(runtime, prompt, part, existing_items, existing_messages):
@@ -1511,7 +1538,6 @@ def publish_part(runtime, response, start, end, journal=None):
         save_state(runtime, "concluída", resolved["resumo"], date=journal["date"])
         if missing:
             runtime.log("escrita", "em andamento", "mudança não aplicada: " + ", ".join(missing), interval)
-        runtime.log("escrita", "concluída", interval=interval)
         write_index(runtime)
         # Verify published coverage and identifiers before removing recovery data.
         present = all_items(runtime)
@@ -1519,6 +1545,10 @@ def publish_part(runtime, response, start, end, journal=None):
                 any(identity not in present for identity in mapping.values())):
             raise Failure("gravação dos documentos não conferiu")
         checked(path, runtime.data).unlink()
+        runtime.log("escrita", "em andamento", interval=interval)
+    if not runtime.completed_parts:
+        runtime.writing_start = start
+    runtime.writing_end = end
     runtime.completed_parts += 1
     runtime.written.update(T["files"][n] for n in (1, 3, 4, 5, 6, 7))
 
@@ -1538,10 +1568,382 @@ def recover_journals(runtime):
         publish_part(runtime, journal["response"], journal["start"], journal["end"], journal)
 
 
+def old_files(doc):
+    if not doc.exists():
+        return []
+    if doc.is_symlink():
+        raise Failure('pasta de documentação contém link simbólico')
+    return sorted(p for p in doc.iterdir() if p.name in ('index.md', '.state') or
+                  p.name.startswith('handoff-') and p.suffix == '.md')
+
+
+def source_fingerprint(path):
+    if path.is_symlink():
+        return ['link', os.readlink(str(path))]
+    if path.is_dir():
+        if path.name != '.state':
+            raise Failure('arquivo antigo é uma pasta: ' + path.name)
+        entries = []
+        for child in sorted(path.rglob('*')):
+            if child.is_symlink():
+                entries.append([child.relative_to(path).as_posix(), 'link', os.readlink(str(child))])
+            elif child.is_file():
+                entries.append([child.relative_to(path).as_posix(), 'file', hashlib.sha256(child.read_bytes()).hexdigest()])
+            elif child.is_dir():
+                entries.append([child.relative_to(path).as_posix(), 'dir'])
+            else:
+                raise Failure('tipo de arquivo antigo não suportado')
+        return ['directory', short_name(json.dumps(entries))]
+    if not path.is_file():
+        raise Failure('tipo de arquivo antigo não suportado: ' + path.name)
+    return ['file', hashlib.sha256(path.read_bytes()).hexdigest()]
+
+
+def old_body(text):
+    lines = text.splitlines(keepends=True)
+    meta = {}
+    if lines and lines[0].startswith('<!-- hopper-documentation-openai '):
+        match = re.fullmatch(r'<!-- hopper-documentation-openai (.*?) -->\s*', lines.pop(0))
+        if not match:
+            raise Failure('metadados do handoff antigo inválidos')
+        meta = parse_json(match[1])
+    kept, skipping = [], False
+    for line in lines:
+        if re.match(r'^##\s+', line):
+            skipping = bool(re.match(r'^##\s+(?:Referências|References)\s*$', line, re.I))
+        if not skipping:
+            kept.append(line)
+    body = ''.join(kept).strip()
+    useful = '\n'.join(line for line in body.splitlines() if not re.match(r'^\s*#{1,6}\s', line)).strip()
+    return meta, body, len(useful)
+
+
+def migration_sources(runtime):
+    sources = []
+    for path in old_files(runtime.doc):
+        fingerprint = source_fingerprint(path)
+        source = {'name': path.name, 'fingerprint': fingerprint, 'conversation': '', 'body': '', 'useful': 0}
+        if fingerprint[0] == 'file' and path.name.startswith('handoff-'):
+            meta, body, useful = old_body(read(path))
+            identity = meta.get('thread_id') or ''
+            if not identity:
+                found = re.search(r'([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\.md$', path.name)
+                identity = found[1] if found else 'antigo' + short_name(path.name)[:4]
+            if not isinstance(identity, str) or not re.fullmatch(r'[a-zA-Z0-9-]+', identity):
+                raise Failure('identificador antigo inválido')
+            date = re.match(r'handoff-(\d{4})(\d{2})(\d{2})-', path.name)
+            if not date:
+                raise Failure('data ausente no nome do handoff antigo: ' + path.name)
+            date = '-'.join(date.groups())
+            datetime.strptime(date, '%Y-%m-%d')
+            source.update(conversation=identity, body=ocultar(body), useful=useful, date=date)
+        sources.append(source)
+    return sources
+
+
+def migration_view(runtime, identity, sources):
+    view = Runtime(identity, runtime.action, runtime.trigger)
+    view.project, view.doc, view.executable = runtime.project, runtime.doc, runtime.executable
+    reservation = getattr(runtime, 'migration_folders', {}).get(identity)
+    if reservation:
+        view.code = reservation['code']
+        view.folder = runtime.doc / T['conversations'] / reservation['folder']
+        checked(view.folder, runtime.doc)
+        for number in (2, 7):
+            present = read(view.folder / T['files'][number])
+            if present and metadata(present, T['conversation']) != identity:
+                raise Failure('pasta reservada para migração foi ocupada por outra conversa')
+        return view
+    first = min(s['date'] for s in sources if s['conversation'] == identity)
+    select_folder(view, datetime.strptime(first, '%Y-%m-%d').timestamp())
+    return view
+
+
+def migration_prompt(runtime, excerpt, previous, documents):
+    tags = [('regras_de_escrita', material(T['rules'], FALLBACK_RULES[LANGUAGE])),
+            ('modelos', material(T['templates'], FALLBACK_TEMPLATES[LANGUAGE])),
+            ('decisoes', documents[4]), ('funcoes', documents[5]), ('pendencias', documents[6]),
+            ('handoff_anterior', previous), ('arquivos_antigos', excerpt)]
+    task = ('Tarefa: extraia os itens e escreva os handoffs de todas as conversas dos arquivos desta parte. '
+            'Use N1, N2… para itens novos. Preserve o que continua valendo do handoff anterior. '
+            'Cite nomes de arquivos como origem. Não escreva datas. ' if LANGUAGE == 'pt-br' else
+            'Task: extract items and write the handoffs of every conversation in this part. '
+            'Use N1, N2… for new items. Preserve what still applies from the previous handoff. '
+            'Cite file names as sources. Do not write dates. ')
+    return T['instruction'] + '\n' + ''.join('<{}>\n{}\n</{}>\n'.format(tag, text.strip(), tag)
+                                             for tag, text in tags) + task + '\n'
+
+
+def migration_part(runtime, journal):
+    sources = [s for s in journal['sources'] if s['conversation']]
+    # Keep each conversation's handoffs chronological, including across parts.
+    dates = {identity: min(s['date'] for s in sources if s['conversation'] == identity)
+             for identity in {s['conversation'] for s in sources}}
+    sources.sort(key=lambda s: (dates[s['conversation']], s['conversation'], s['name']))
+    index, offset = journal['cursor']
+    if index >= len(sources):
+        return None
+    with runtime.folder_lock():
+        documents = {n: read(runtime.doc / T['files'][n]) for n in (4, 5, 6)}
+        existing = all_items(runtime)
+        previous = '\n\n'.join(read(migration_view(runtime, ident, sources).folder / T['files'][7])
+                               for ident in sorted({s['conversation'] for s in sources[index:]}))
+    base = migration_prompt(runtime, '', previous, documents)
+    if len(base) > 500000:
+        raise Failure('documentos grandes demais para o redator')
+    room = min(limit('LIMITE_DA_PARTE', 300000), limit('ORCAMENTO', 600000) - len(base))
+    chunks, names, identities, size = [], set(), set(), 0
+    while index < len(sources):
+        source = sources[index]
+        header = '### {}\nthread_id: {}\n'.format(source['name'], source['conversation'])
+        content = source['body'][offset:]
+        available = room - size - len(header) - (2 if chunks else 0)
+        if len(content) > available and chunks:
+            break
+        if available <= 0:
+            raise Failure('espaço insuficiente para um arquivo antigo')
+        part = content[:available]
+        chunks.append(header + part)
+        size += len(header) + len(part) + (2 if len(chunks) > 1 else 0)
+        names.add(source['name'])
+        identities.add(source['conversation'])
+        offset += len(part)
+        if offset < len(source['body']):
+            break
+        index, offset = index + 1, 0
+    prompt = migration_prompt(runtime, '\n\n'.join(chunks), previous, documents)
+    return prompt, names, identities, [index, offset], existing
+
+
+def validate_migration(response, names, identities, existing, sources):
+    validate_schema(response, MIGRATION_SCHEMA)
+    refs = {item['ref'] for item in response['itens_novos']}
+    if len(refs) != len(response['itens_novos']):
+        raise Failure('referências provisórias repetidas')
+    found = [handoff['conversa'] for handoff in response['handoffs_antigos']]
+    if len(found) != len(set(found)) or set(found) != identities:
+        raise Failure('verificação da migração: conversas diferentes das dos arquivos antigos')
+    if set(response['sem_conteudo']) - names:
+        raise Failure('verificação da migração: arquivo sem conteúdo desconhecido')
+    for source in sources:
+        if source['name'] in response['sem_conteudo'] and source['useful'] >= 200:
+            raise Failure('verificação da migração: handoff sem conteúdo tem 200 ou mais caracteres úteis')
+    rejected = []
+    for item in response['itens_novos']:
+        if (item['conversa'] not in identities or not item['texto'].strip() or
+                not valid_status(item['tipo'], item['situacao']) or
+                item['tipo'] != 'PD' and (item['recomendacao'] or item['depende_de'])):
+            raise Failure('item de migração inválido')
+        allowed_sources = {s['name'] for s in sources if s['conversation'] == item['conversa']} & names
+        rejected.extend(origin for origin in item['origem'] if origin not in allowed_sources)
+    for change in response['mudancas']:
+        if change['id'] in existing and not valid_status(existing[change['id']]['kind'], change['situacao']):
+            raise Failure('situação de item inválida')
+        rejected.extend(origin for origin in change['origem'] if origin not in names)
+    texts = [response['resumo'], *strings_in(response['itens_novos']), *strings_in(response['handoffs_antigos'])]
+    texts += [text for change in response['mudancas'] for text in [change['situacao'], *change['origem']]]
+    allowed = set(existing) | refs
+    for text in texts:
+        rejected.extend(ref for ref in REFERENCE.findall(text) + PROVISIONAL.findall(text) if ref not in allowed)
+    if rejected:
+        raise ReferencesRejected(rejected)
+    accounted = set(response['sem_conteudo'])
+    accounted.update(origin for item in response['itens_novos'] for origin in item['origem'])
+    handoffs = '\n'.join(strings_in(response['handoffs_antigos']))
+    accounted.update(name for name in names if name in handoffs)
+    if names - accounted:
+        raise Failure('verificação da migração: arquivos sem destino: ' + ', '.join(sorted(names - accounted)))
+
+
+def verify_migration(runtime, journal):
+    """R32. All four conditions are evaluated against the published disk files."""
+    sources = journal['sources']
+    accounted = set(journal['sem_conteudo'])
+    identities = {s['conversation'] for s in sources if s['conversation']}
+    if set(journal['handoffs']) != identities:
+        raise Failure('verificação da migração: conversas incompletas')
+    for source in sources:
+        if source['conversation'] and source['name'] in accounted and source['useful'] >= 200:
+            raise Failure('verificação da migração: handoff sem conteúdo tem 200 ou mais caracteres úteis')
+    seen, references = set(), set()
+    message_ids = all_message_ids(runtime)
+    for kind, path in shared_documents(runtime).items():
+        if path.is_symlink() or not path.is_file():
+            raise Failure('verificação da migração: documento compartilhado ausente')
+        text = read(path)
+        number = {'D': 4, 'F': 5, 'PD': 6}[kind]
+        if not text.startswith('# ' + T['titles'][number] + '\n'):
+            raise Failure('verificação da migração: título do documento inválido')
+        entries = items_in(text)
+        if len(entries) != len(re.findall(r'^### ', text, re.M)):
+            raise Failure('verificação da migração: identificador de item inválido')
+        for item in entries:
+            fields = item['fields']
+            required = [T['source'], T['status'], T['range']]
+            if kind == 'PD':
+                required += [T['recommendation'], T['depends']]
+            if (item['id'] in seen or item['kind'] != kind or item['n'] < 1 or
+                    not item['body'].split('\n\n')[0].strip() or
+                    any(label not in fields for label in required) or
+                    any(len(re.findall(r'^- ' + re.escape(label) + ':', item['body'], re.M)) != 1 for label in required) or
+                    not fields[T['source']] or not fields[T['range']] or not valid_status(kind, fields[T['status']])):
+                raise Failure('verificação da migração: item fora do formato: ' + item['id'])
+            seen.add(item['id'])
+            interval = fields[T['range']]
+            if interval != T['migration']:
+                match = RANGE.fullmatch(interval)
+                if (not match or match[2] != item['code'] or match[4] != item['code'] or
+                        not 1 <= int(match[1]) <= int(match[3]) or
+                        any('M{}-{}'.format(n, item['code']) not in message_ids
+                            for n in range(int(match[1]), int(match[3]) + 1))):
+                    raise Failure('verificação da migração: intervalo do item inválido')
+            references.update(REFERENCE.findall(fields[T['status']]))
+            accounted.update(origin.strip() for origin in fields[T['source']].split(','))
+    if references - (seen | message_ids):
+        raise Failure('verificação da migração: situação cita identificador inexistente')
+    for identity in identities:
+        view = migration_view(runtime, identity, sources)
+        path = view.folder / T['files'][7]
+        text = read(path)
+        if (path.is_symlink() or not text or metadata(text, T['conversation']) != identity or
+                re.findall(r'^## (.+)$', text, re.M) != T['sections']):
+            raise Failure('verificação da migração: documento 7 ausente ou inválido: ' + identity)
+        accounted.update(s['name'] for s in sources if s['conversation'] == identity and s['name'] in text)
+    missing = {s['name'] for s in sources if s['fingerprint'][0] != 'link'} - accounted
+    if missing:
+        raise Failure('verificação da migração: arquivos sem destino: ' + ', '.join(sorted(missing)))
+
+
+def migrate_project(runtime):
+    runtime.doc = runtime.project / DOC_FOLDER
+    if runtime.doc.is_symlink() or inside(runtime.doc, PLUGIN_ROOT):
+        raise Failure('destino de documentação fora das pastas permitidas')
+    path = runtime.data / 'diarios' / ('migracao-' + short_name(runtime.doc) + '.json')
+    if not old_files(runtime.doc) and not path.exists():
+        return 0
+    with runtime.lock('migracao-' + short_name(runtime.doc)):
+        if path.exists():
+            journal = parse_json(read(path))
+            if journal.get('project') != str(runtime.project) or journal.get('language') != LANGUAGE:
+                raise Failure('diário de migração de outra pasta ou idioma')
+        else:
+            sources = migration_sources(runtime)
+            if not sources:
+                return 0
+            journal = {'project': str(runtime.project), 'language': LANGUAGE, 'sources': sources,
+                       'cursor': [0, 0], 'current': None, 'handoffs': [],
+                       'sem_conteudo': [s['name'] for s in sources if not s['conversation']]}
+            with runtime.folder_lock():
+                folders, used = {}, {}
+                for identity in sorted({s['conversation'] for s in sources if s['conversation']}):
+                    view = migration_view(runtime, identity, sources)
+                    if view.code in used and used[view.code] != identity:
+                        code = identity.replace('-', '')[-12:]
+                        if code in used or any((runtime.doc / T['conversations']).glob('*-' + code)):
+                            raise Failure('colisão do código de 12 caracteres da conversa antiga')
+                        view.folder = view.folder.with_name(view.folder.name[:-len(view.code)] + code)
+                        view.code = code
+                        runtime.log('migracao', 'em andamento', 'colisão do código da conversa; usando 12 caracteres')
+                    folders[identity] = {'code': view.code, 'folder': view.folder.name}
+                    used[view.code] = identity
+                journal['folders'] = folders
+            atomic_json(path, journal, runtime.data)
+        runtime.migration_folders = journal['folders']
+        if not runtime.executable and any(s['conversation'] for s in journal['sources']):
+            runtime.choose_executable()
+        while True:
+            current = journal['current']
+            if current is None:
+                part = migration_part(runtime, journal)
+                if part is None:
+                    break
+                prompt, names, identities, cursor, existing = part
+                for attempt in range(2):
+                    response = call_writer(runtime, prompt, MIGRATION_SCHEMA)
+                    try:
+                        validate_migration(response, names, identities, existing, journal['sources'])
+                        break
+                    except ReferencesRejected as error:
+                        if attempt:
+                            raise
+                        correction = '\nReferências recusadas: ' + ', '.join(error.references) + '\n'
+                        if len(prompt + correction) > limit('ORCAMENTO', 600000):
+                            raise Failure('sem espaço para corrigir referências da migração')
+                        prompt += correction
+                response = hide_fields(response)
+                with runtime.folder_lock():
+                    mapping, counters = {}, {}
+                    present = all_items(runtime)
+                    for item in response['itens_novos']:
+                        view = migration_view(runtime, item['conversa'], journal['sources'])
+                        key = (item['tipo'], view.code)
+                        counters[key] = counters.get(key, max([i['n'] for i in present.values()
+                            if (i['kind'], i['code']) == key] or [0])) + 1
+                        mapping[item['ref']] = '{}{}-{}'.format(key[0], counters[key], key[1])
+                    current = {'response': response, 'mapping': mapping, 'cursor': cursor, 'date': display_time()}
+                    journal['current'] = current
+                    atomic_json(path, journal, runtime.data)
+            interrupt('depois-do-diario')
+            with runtime.folder_lock():
+                initialize_documents(runtime)
+                response, mapping = current['response'], current['mapping']
+                append_items(runtime, response, T['migration'], mapping)
+                interrupt('meio-da-gravacao')
+                missing = apply_changes(runtime, response, mapping)
+                if missing:
+                    runtime.log('migracao', 'em andamento', 'mudança não aplicada: ' + ', '.join(missing))
+                for handoff in replace_refs(response['handoffs_antigos'], mapping):
+                    identity = handoff['conversa']
+                    view = migration_view(runtime, identity, journal['sources'])
+                    atomic(view.folder / T['files'][7], handoff_text(view, handoff['handoff'], T['no_full'], current['date']), runtime.doc)
+                    save_state(view, 'concluída', handoff['resumo'], date=current['date'])
+                journal['handoffs'] = sorted(set(journal['handoffs']) | {h['conversa'] for h in response['handoffs_antigos']})
+                journal['sem_conteudo'] = sorted(set(journal['sem_conteudo']) | set(response['sem_conteudo']))
+                journal['cursor'], journal['current'] = current['cursor'], None
+                atomic_json(path, journal, runtime.data)
+                write_index(runtime)
+        with runtime.folder_lock():
+            initialize_documents(runtime)
+            verify_migration(runtime, journal)
+            # Check the entire original snapshot before deleting even one entry.
+            for source in journal['sources']:
+                original = runtime.doc / source['name']
+                if (original.exists() or original.is_symlink()) and source_fingerprint(original) != source['fingerprint']:
+                    raise Failure('arquivo antigo mudou durante a migração: ' + source['name'])
+            runtime.log('migracao', 'concluída')
+            interrupt('antes-da-exclusao')
+            for source in journal['sources']:
+                original = runtime.doc / source['name']
+                if original.is_symlink():
+                    original.unlink()
+                elif original.is_dir():
+                    shutil.rmtree(str(original))
+                else:
+                    original.unlink(missing_ok=True)
+            runtime.log('exclusao', 'concluída')
+            write_index(runtime)
+            checked(path, runtime.data).unlink()
+            return len(journal['sources'])
+
+
 def run_round(runtime):
     with runtime.lock("rodada-" + short_name(runtime.conversation)):
         if not runtime.executable:
             runtime.choose_executable()
+        recover_compactions(runtime)
+        # Migration must precede the first copy so an old folder is reused.
+        with AppServer(runtime) as server:
+            try:
+                thread = server.call('thread/read', {'threadId': runtime.conversation, 'includeTurns': False})['thread']
+            except RPCFailure as error:
+                raise Failure('conversa não encontrada no histórico') from error
+        if thread.get('id') != runtime.conversation or not Path(thread.get('cwd', '')).is_absolute():
+            raise Failure('formato do histórico não reconhecido')
+        runtime.project = Path(thread['cwd']).resolve()
+        runtime.doc = runtime.project / DOC_FOLDER
+        excluded = {str(Path(p).resolve()) for p in runtime.config['pastas_sem_migracao']}
+        if runtime.config['migracao_automatica'] and str(runtime.project) not in excluded:
+            migrate_project(runtime)
         copied = copy_history(runtime)
         if copied:
             runtime.written.add(T["files"][2])
@@ -1558,6 +1960,8 @@ def run_round(runtime):
             publish_part(runtime, response, part[0]["n"], part[-1]["n"])
             pending = pending[len(part):]
         if runtime.completed_parts:
+            runtime.log('escrita', 'concluída', interval=message_range(
+                runtime.code, runtime.writing_start, runtime.writing_end))
             return T["success"].format(", ".join(sorted(runtime.written)))
         runtime.log("escrita", "nada novo")
         return T["nothing"]
@@ -1565,7 +1969,13 @@ def run_round(runtime):
 
 def failure_reason(error):
     if isinstance(error, PermissionError) and any(word in str(error).lower() for word in ("sandbox", "operation not permitted")):
-        return "o sandbox da sessão bloqueou o acesso necessário"
+        return ("o sandbox da sessão bloqueou o acesso necessário" if LANGUAGE == 'pt-br' else
+                'the session sandbox blocked the required access')
+    if os.environ.get('CODEX_SANDBOX') and (
+            isinstance(error, PermissionError) or any(word in str(error).lower() for word in
+            ('operation not permitted', 'network is unreachable', 'permission denied', 'leitor do histórico encerrou'))):
+        return ("o sandbox da sessão bloqueou o acesso necessário" if LANGUAGE == 'pt-br' else
+                'the session sandbox blocked the required access')
     reason = ocultar(one_line(str(error)))
     return reason[:300].rstrip(".") or "falha sem descrição"
 
@@ -1574,11 +1984,18 @@ def record_failure(runtime, error):
     reason = failure_reason(error)
     if runtime is not None:
         try:
-            runtime.log("escrita", "parcial" if runtime.completed_parts else "falhou", reason)
             if runtime.project is not None and runtime.doc and runtime.doc.is_dir():
                 with runtime.folder_lock():
-                    save_state(runtime, "falhou", reason=reason)
+                    if runtime.conversation:
+                        save_state(runtime, "falhou", reason=reason)
                     write_index(runtime)
+        except (OSError, ValueError, Failure):
+            pass
+        try:
+            # Publish the terminal log only after the index is durable. Consumers
+            # waiting for this row can then inspect the failure immediately.
+            runtime.log("migracao" if runtime.action == 'migrar' else "escrita",
+                        "parcial" if runtime.completed_parts else "falhou", reason)
         except (OSError, ValueError, Failure):
             pass
     return T["failure"].format(reason)
@@ -1591,8 +2008,89 @@ def hook_event():
     return value
 
 
+def compaction_key(event):
+    return short_name(json.dumps({key: event.get(key) for key in ('transcript_path', 'turn_id', 'trigger')}, sort_keys=True))
+
+
+def compaction_tracking(runtime, command=None, key=None):
+    path = runtime.data / 'compactacoes' / (short_name(runtime.conversation) + '.json')
+    with runtime.lock('compactacao-' + short_name(runtime.conversation), seconds=20):
+        entries = parse_json(read(path) or '[]')
+        if command:
+            field = 'copy' if command == 'copia' else 'write'
+            entry = next((e for e in entries if e['key'] == key and not e[field] and not e.get('reported')), None)
+            if entry is None:
+                entry = {'key': key, 'copy': False, 'write': False, 'reported': False}
+                entries.append(entry)
+            entry[field] = True
+        else:
+            for entry in entries:
+                if entry['copy'] and not entry['write'] and not entry['reported']:
+                    runtime.log('inicio-compactacao', 'escrita não iniciada')
+                    entry['reported'] = True
+        # A fully paired event no longer needs a durable pending entry.
+        entries = [e for e in entries if not (e['copy'] and e['write'])]
+        if entries or path.exists():
+            atomic_json(path, entries, runtime.data)
+
+
+def recover_compactions(runtime):
+    compaction_tracking(runtime)
+
+
+def detached_round(runtime, event):
+    """C08. Spawn before acquiring any copy, round or project lock."""
+    runtime.code = runtime.conversation.replace('-', '')[-8:]
+    output = raw_log_path(runtime)
+    marker = runtime.data / 'marcadores' / (runtime.code + '-' + uuid.uuid4().hex + '.json')
+    checked(marker, runtime.data).parent.mkdir(exist_ok=True)
+    command = [sys.executable, '-B', str(Path(__file__).resolve()), 'rodada', '--conversa', runtime.conversation,
+               '--acionamento', 'gatilho-escrita', '--trigger', runtime.trigger, '--marcador', str(marker),
+               '--compactacao', compaction_key(event), '--saida', str(output)]
+    fd = os.open(str(output), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    os.write(fd, ('gatilho_pid={}\n'.format(os.getpid())).encode())
+    try:
+        pid = os.fork()
+        if pid == 0:
+            try:
+                os.setsid()
+                if os.fork() != 0:
+                    os._exit(0)
+                null = os.open(os.devnull, os.O_RDONLY)
+                os.dup2(null, 0)
+                os.dup2(fd, 1)
+                os.dup2(fd, 2)
+                if null > 2:
+                    os.close(null)
+                if fd > 2:
+                    os.close(fd)
+                os.chdir(str(runtime.data))
+                os.write(1, ('processo_separado_pid={}\n'.format(os.getpid())).encode())
+                os.execv(sys.executable, command)
+            except BaseException as error:
+                try:
+                    line = record_failure(runtime, error)
+                    atomic_json(marker, {'linha': line, 'codigo': 1}, runtime.data)
+                finally:
+                    os._exit(1)
+        os.waitpid(pid, 0)
+    finally:
+        os.close(fd)
+    end = time.monotonic() + 3500 * scale()
+    while True:
+        if marker.exists():
+            result = parse_json(read(marker))
+            checked(marker, runtime.data).unlink()
+            return {'systemMessage': result['linha']}
+        left = end - time.monotonic()
+        if left <= 0:
+            runtime.log('escrita', 'em andamento')
+            return {'systemMessage': T['progress']}
+        time.sleep(min(1 * scale(), left))
+
+
 def hook_command(command):
-    """Synchronous baseline. Detached writing and compaction tracking arrive in U5."""
+    """Never fail or stop compaction, including initialization and fork errors."""
     runtime = None
     started = time.monotonic()
     try:
@@ -1600,9 +2098,9 @@ def hook_command(command):
         match = UUID_AT_END.search(Path(event.get("transcript_path") or "").name)
         identity = match[1].lower() if match else ""
         runtime = Runtime(identity, "gatilho-" + command, event.get("trigger", ""))
-        if event.get("agent_id") or not identity or os.environ.get(PREFIX + "RUN"):
+        if 'agent_id' in event or not identity or os.environ.get(PREFIX + "RUN"):
             runtime.project = Path(event["cwd"]).absolute() if event.get("cwd") else None
-            if event.get("agent_id"):
+            if 'agent_id' in event:
                 result, reason = "subconversa ignorada", ""
             else:
                 result, reason = "nada novo", "conversa não identificada" if not identity else "redator ignorado"
@@ -1610,11 +2108,11 @@ def hook_command(command):
             return {}
         if command == "copia":
             runtime.log("inicio-compactacao", "em andamento")
+            compaction_tracking(runtime, 'copia', compaction_key(event))
             runtime.choose_executable()
             copy_history(runtime, started + 100 * scale(), hook=True)
             return {}
-        line = run_round(runtime)
-        return {"systemMessage": line}
+        return detached_round(runtime, event)
     except Exception as error:
         if command == "copia":
             if runtime is not None:
@@ -1633,6 +2131,11 @@ def main(argv=None):
     commands.add_parser("escrita")
     run = commands.add_parser("rodada")
     run.add_argument("--conversa", required=True)
+    run.add_argument('--acionamento', choices=['pedido', 'gatilho-escrita'], default='pedido', help=argparse.SUPPRESS)
+    run.add_argument('--trigger', default='', help=argparse.SUPPRESS)
+    run.add_argument('--marcador', help=argparse.SUPPRESS)
+    run.add_argument('--compactacao', help=argparse.SUPPRESS)
+    run.add_argument('--saida', help=argparse.SUPPRESS)
     migrate = commands.add_parser("migrar")
     migrate.add_argument("--pasta", required=True)
     commands.add_parser("config")
@@ -1643,20 +2146,34 @@ def main(argv=None):
     runtime = None
     try:
         runtime = Runtime(args.conversa if args.command == "rodada" else "",
-                          "migrar" if args.command == "migrar" else "pedido")
+                          args.acionamento if args.command == 'rodada' else args.command if args.command == 'migrar' else 'pedido',
+                          args.trigger if args.command == 'rodada' else '')
         if args.command == "config":
             print(json.dumps(dict(pasta_de_dados=str(runtime.data), **runtime.config), ensure_ascii=False, indent=2))
         elif args.command == "rodada":
             if not re.fullmatch(r"[a-zA-Z0-9-]+", args.conversa):
                 raise Failure("identificador de conversa inválido")
-            print(run_round(runtime))
+            if args.saida:
+                runtime.output_log = checked(Path(args.saida), runtime.data)
+            if args.compactacao:
+                compaction_tracking(runtime, 'escrita', args.compactacao)
+            line = run_round(runtime)
+            print(line, flush=True)
+            if args.marcador:
+                atomic_json(Path(args.marcador), {'linha': line, 'codigo': 0}, runtime.data)
         else:
             runtime.project = Path(args.pasta).expanduser().resolve()
-            runtime.log("migracao", "falhou", "migração ainda não implementada (U6)")
-            raise Failure("migração ainda não implementada (U6)")
+            if not runtime.project.is_dir() or not runtime.project.stat().st_mode & 0o222:
+                raise Failure('pasta do projeto sem permissão de gravação')
+            total = migrate_project(runtime)
+            print(('Migração concluída: {} arquivos antigos.' if LANGUAGE == 'pt-br' else
+                   'Migration done: {} old files.').format(total))
         return 0
     except Exception as error:
-        print(record_failure(runtime, error))
+        line = record_failure(runtime, error)
+        print(line, flush=True)
+        if args.command == 'rodada' and args.marcador and runtime is not None:
+            atomic_json(Path(args.marcador), {'linha': line, 'codigo': 1}, runtime.data)
         return 1
 
 
