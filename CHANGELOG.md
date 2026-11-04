@@ -1,6 +1,6 @@
 # Alterações
 
-## 2.0.0 (não publicada)
+## 2.0.0 (2026-11-04)
 
 - Registra cada conversa em 7 documentos, com índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff.
 - Copia o histórico por acréscimo, com paginação nativa, origens verificáveis, identificação por conversa e ocultação de segredos reconhecidos.
@@ -10,3 +10,4 @@
 - Centraliza configuração, diagnósticos e registros na pasta de dados do plugin. O comando `config` mostra o caminho e os valores efetivos.
 - Distribui 2 plugins completos, em português e inglês, com manifesto nativo e programas que diferem somente em `LANGUAGE`.
 - Remove programas, referências e manifestos antigos. Atualiza documentação, build reproduzível, nomes dos ZIPs e testes de empacotamento para Python 3.9 ou mais novo.
+- Limitação conhecida: em pastas grandes do formato antigo, a migração pode parar com "arquivos sem destino", "referências recusadas" ou "conversas diferentes das dos arquivos antigos". Nesse caso nenhum arquivo antigo é apagado, o próximo `migrar` retoma pela parte que falhou, e a pasta pode entrar em `pastas_sem_migracao`.
