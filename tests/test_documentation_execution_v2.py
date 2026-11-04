@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,10 +93,39 @@ if sys.argv[1:2] == ['app-server']:
         self.amb.configura(executavel=str(launcher))
 
     def test_reader_startup_has_a_floor_at_small_time_scale(self):
-        """G12/T23/T24. Real process startup must survive a 0.002 time scale."""
+        """G12/T23/T24. Simulate 2 s per response without wall-clock timing."""
+        spec = importlib.util.spec_from_file_location('documentation_reader_test', self.amb.programa)
+        program = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(program)
+        elapsed = [0.0]
+        clock = Mock(monotonic=lambda: elapsed[0])
+        process = Mock(stdin=io.BytesIO())
+        process.poll.return_value = 0
+        selector = Mock()
+
+        def wait_for_response(timeout):
+            elapsed[0] += min(2.0, timeout)
+            return [True] if timeout >= 2.0 else []
+
+        selector.select.side_effect = wait_for_response
+        responses = [(json.dumps({'id': n, 'result': {'data': []}}) + '\n').encode('utf-8')
+                     for n in range(1, 4)]
+        runtime = Mock(executable='synthetic-reader', data=self.amb.dados)
+        with patch.dict(os.environ, {PREFIXO + 'ESCALA_DE_TEMPO': '0.002'}), \
+                patch.object(program, 'time', clock), \
+                patch.object(program.subprocess, 'Popen', return_value=process), \
+                patch.object(program.selectors, 'DefaultSelector', return_value=selector), \
+                patch.object(program.os, 'read', side_effect=responses):
+            with program.AppServer(runtime) as server:
+                for method in ('thread/turns/list', 'thread/items/list'):
+                    self.assertEqual(server.call(method, {}), {'data': []})
+        self.assertEqual(elapsed[0], 6.0)
+
+    def test_round_finishes_with_slow_reader_startup(self):
+        """G12/T23/T24. Also exercise the real subprocess and complete writer round."""
         self.amb.historico_b1()
         self.slow_reader_startup(0.5)
-        result = self.amb.rodada(escala='0.002', tempo=10)
+        result = self.amb.rodada(escala='0.002', tempo=30)
         self.sucesso(result, 'G12/T23/T24')
         self.assertEqual(len(mensagens(le(self.amb.d(2)))), 14)
         self.assertTrue(self.amb.d(3).is_file())

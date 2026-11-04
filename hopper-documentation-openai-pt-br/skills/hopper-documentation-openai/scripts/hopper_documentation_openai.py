@@ -648,10 +648,10 @@ class AppServer:
         self.sequence += 1
         identity = self.sequence
         self.send({"id": identity, "method": method, "params": params})
-        # Keep a one-second floor for process startup and responses at small
-        # test scales. The caller's copy deadline still takes precedence.
-        timeout = 120 if method == "initialize" else 30
-        end = time.monotonic() + max(1.0, timeout * scale())
+        # Allow slow process startup and pages even at small test scales.
+        # The caller's copy deadline still takes precedence over these floors.
+        timeout, floor = (120, 10.0) if method == "initialize" else (30, 3.0)
+        end = time.monotonic() + max(floor, timeout * scale())
         if self.deadline is not None:
             end = min(end, self.deadline)
         while time.monotonic() < end:
