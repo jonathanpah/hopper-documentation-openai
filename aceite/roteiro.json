@@ -1,0 +1,88 @@
+{
+  "descricao": "Roteiro do Anexo F do SPEC.md do Codex. F-C guarda os pedidos literais, F-A guarda as asserções e F-K preserva as 20 mensagens escolhidas em U1, na mesma ordem.",
+  "mensagens": [
+    "Vamos testar a documentação. Decidimos usar a cor azul no painel.",
+    "a senha do servidor é Pl4nt@d4#2026 hoje",
+    "Quero seguir o sitema, claro ou escuro.",
+    "Crie o arquivo nota.txt com o texto teste.",
+    "Fica pendente escolher o formato do gráfico.",
+    "Documente a conversa."
+  ],
+  "mensagens_no_documento_2": [
+    "Vamos testar a documentação. Decidimos usar a cor azul no painel.",
+    "a senha do servidor é {oculto} hoje",
+    "Quero seguir o sitema, claro ou escuro.",
+    "Crie o arquivo nota.txt com o texto teste.",
+    "Fica pendente escolher o formato do gráfico.",
+    "Documente a conversa."
+  ],
+  "assercoes": {
+    "documento_2": {
+      "contem": [
+        "sitema"
+      ],
+      "contem_oculto": true,
+      "nao_contem": [
+        "Pl4nt@d4#2026"
+      ],
+      "linha_de_ferramenta": {
+        "contem": "nota.txt"
+      }
+    },
+    "documento_4": {
+      "tipo": "D",
+      "origem_na_mensagem": 1,
+      "texto_contem": "azul"
+    },
+    "documento_6": {
+      "tipo": "PD",
+      "origem_na_mensagem": 5,
+      "texto_contem": "gráfico"
+    },
+    "documento_5": {
+      "tipo": "F",
+      "origem_na_mensagem": 4,
+      "texto_contem": "nota.txt",
+      "ou_na_mensagem_do_codex_com_a_ferramenta": "nota.txt"
+    },
+    "resposta_ao_pedido": {
+      "depois_da_mensagem": 6,
+      "linha_comeca_com": {
+        "pt-br": "Documentação concluída:",
+        "en": "Documentation done:"
+      }
+    }
+  },
+  "textos_fixos": {
+    "pt-br": {
+      "oculto": "[oculto]",
+      "ferramenta": "Ferramenta: "
+    },
+    "en": {
+      "oculto": "[hidden]",
+      "ferramenta": "Tool: "
+    }
+  },
+  "continuacao": [
+    "Explique em cerca de 1.500 palavras, em português, a fotossíntese. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, o ciclo da água. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, as placas tectônicas. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, o sistema solar. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a Revolução Industrial. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a invenção da imprensa. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, o funcionamento de um motor a combustão. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, o sistema imunológico. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a história do café. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a origem do xadrez. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a energia eólica. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, como funciona a internet. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, o ciclo do carbono. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a formação das nuvens. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a história da navegação. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, os vulcões. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, as abelhas e a polinização. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, as marés. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, como um avião voa. Responda só com o texto, sem usar ferramentas.",
+    "Explique em cerca de 1.500 palavras, em português, a história do relógio. Responda só com o texto, sem usar ferramentas."
+  ]
+}

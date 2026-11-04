@@ -1,0 +1,7 @@
+{
+  "nada_relevante":false,"resumo":"Faltam destinos dos arquivos 2 e 3","itens_novos":[
+    {"ref":"N1","tipo":"D","texto":"Usar azul.","conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","origem":["handoff-20260220-100000-a1b2c3d4.md"],"situacao":"vigente","recomendacao":"","depende_de":""}
+  ],"mudancas":[],"sem_conteudo":[],"handoffs_antigos":[{"conversa":"019ca123-4000-7000-8000-1010a1b2c3d4","resumo":"Migração incompleta","handoff":{
+    "objetivo":"Continuar o painel.","pautas_e_estado":"Usar azul.","proximo_passo":"Aguardar.","decisoes_e_autorizacoes":"N1 registra azul.","restricoes":"Trabalhar localmente.","descobertas":"Sem nova descoberta.","pendencias":"Sem nova informação.","lacunas":"Faltam 2 arquivos.","como_retomar":"Ler N1."
+  }}]
+}

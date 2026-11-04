@@ -1,0 +1,11 @@
+{
+  "type": "item.completed",
+  "item": {
+    "id": "item_2",
+    "type": "command_execution",
+    "command": "/bin/zsh -lc 'printenv HOPPER_DOCUMENTATION_OPENAI_DADOS'",
+    "aggregated_output": "/tmp/hopper-u1-item8.uX5YV9/dados\n",
+    "exit_code": 0,
+    "status": "completed"
+  }
+}

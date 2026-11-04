@@ -1,16 +1,13 @@
-# Changelog
+# Alterações
 
-## 0.1.1
+## 2.0.0 (2026-11-04)
 
-- Disable discovered native skills, memory injection, and shell tools for the writer only.
-- Restrict source references to supplied sources and repair rejected citations by position.
-- Preserve redacted failure evidence in private user state with precise citation errors.
-- Update the index after each published handoff and recover interrupted indexes.
-
-## 0.1.0
-
-- Native paginated Codex history and incremental records with source quotations.
-- Configurable separate writer, default GPT-6 Luna with xhigh effort.
-- Native asynchronous PreCompact and SessionStart continuity hooks.
-- Immutable publication, locking, recovery, redaction, and bounded quote repair.
-- English and Portuguese packages with portable and compatible Codex manifests.
+- Registra cada conversa em 7 documentos, com índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff.
+- Copia o histórico por acréscimo, com paginação nativa, origens verificáveis, identificação por conversa e ocultação de segredos reconhecidos.
+- Usa `gpt-6-luna` com esforço `xhigh` para redigir o trecho novo em partes, com validação, travas, diário e retomada após interrupções.
+- Executa a cópia síncrona e a escrita em processo separado antes de compactações manuais e automáticas. A skill executa a mesma rodada a pedido.
+- Migra o formato antigo para os documentos novos e apaga as origens somente depois das 4 verificações internas. Permite desligar a migração automática e excluir projetos dela.
+- Centraliza configuração, diagnósticos e registros na pasta de dados do plugin. O comando `config` mostra o caminho e os valores efetivos.
+- Distribui 2 plugins completos, em português e inglês, com manifesto nativo e programas que diferem somente em `LANGUAGE`.
+- Remove programas, referências e manifestos antigos. Atualiza documentação, build reproduzível, nomes dos ZIPs e testes de empacotamento para Python 3.9 ou mais novo.
+- Limitação conhecida: em pastas grandes do formato antigo, a migração pode parar com "arquivos sem destino", "referências recusadas" ou "conversas diferentes das dos arquivos antigos". Nesse caso nenhum arquivo antigo é apagado, o próximo `migrar` retoma pela parte que falhou, e a pasta pode entrar em `pastas_sem_migracao`.

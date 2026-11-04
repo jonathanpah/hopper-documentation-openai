@@ -1,0 +1,9 @@
+{
+  "nada_relevante":false,"resumo":"Conversa de B1 migrada","itens_novos":[
+    {"ref":"N1","tipo":"D","texto":"Seguir o tema do sistema.","conversa":"01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b","origem":["handoff-20260301-090000-4e5f6a7b.md"],"situacao":"vigente","recomendacao":"","depende_de":""},
+    {"ref":"N2","tipo":"F","texto":"Criar inicio.txt.","conversa":"01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b","origem":["handoff-20260301-090000-4e5f6a7b.md"],"situacao":"concluída","recomendacao":"","depende_de":""},
+    {"ref":"N3","tipo":"PD","texto":"Escolher o formato do gráfico.","conversa":"01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b","origem":["handoff-20260301-090000-4e5f6a7b.md"],"situacao":"aberta","recomendacao":"Comparar formatos.","depende_de":"O usuário escolher."}
+  ],"mudancas":[],"sem_conteudo":[],"handoffs_antigos":[{"conversa":"01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b","resumo":"Conversa de B1 migrada","handoff":{
+    "objetivo":"Continuar o painel. (handoff-20260301-090000-4e5f6a7b.md)","pautas_e_estado":"CONTINUIDADE-MIGRADA. N2 está pronta.","proximo_passo":"Escolher o gráfico.","decisoes_e_autorizacoes":"N1 registra o tema.","restricoes":"Preservar inicio.txt.","descobertas":"O arquivo inicial foi conferido.","pendencias":"N3 continua aberta.","lacunas":"Não existe conversa integral antiga.","como_retomar":"Ler N1, N2 e N3."
+  }}]
+}

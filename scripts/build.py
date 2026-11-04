@@ -10,6 +10,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("en", "pt-br")
+PROGRAM = Path("skills/hopper-documentation-openai/scripts/hopper_documentation_openai.py")
 
 
 def package_files(package):
@@ -45,6 +46,18 @@ def validate(files, package):
                     raise ValueError("Broken local link: " + str(relative) + " -> " + target)
 
 
+def python_payload(files, language):
+    scripts = {name.as_posix(): data for name, data in files if name.suffix == ".py"}
+    if set(scripts) != {PROGRAM.as_posix()}:
+        raise ValueError("Package must contain only the version 2 Python program")
+    lines = scripts[PROGRAM.as_posix()].splitlines(keepends=True)
+    selectors = [line for line in lines if re.match(rb"^LANGUAGE\s*=", line)]
+    pattern = rb"LANGUAGE[ \t]*=[ \t]*(['\"])" + language.encode("ascii") + rb"\1[ \t]*(?:\r?\n)?"
+    if len(selectors) != 1 or not re.fullmatch(pattern, selectors[0]):
+        raise ValueError("Invalid LANGUAGE selector for " + language)
+    return b"".join(line for line in lines if line not in selectors)
+
+
 def build(output, root=ROOT):
     prepared = []
     for language in LANGUAGES:
@@ -52,23 +65,20 @@ def build(output, root=ROOT):
         files = package_files(package)
         validate(files, package)
         manifest = json.loads((package / ".codex-plugin/plugin.json").read_text())
-        portable = json.loads((package / "manifests/agent-plugin.json").read_text())
-        if manifest["version"] != portable["version"]:
-            raise ValueError("Manifest versions differ")
+        if manifest["name"] != "hopper-documentation-openai":
+            raise ValueError("Unexpected plugin identity")
         prepared.append((language, manifest["version"], files))
     if len({version for _, version, _ in prepared}) != 1:
         raise ValueError("Language package versions differ")
-    # Both plugins must ship the same executable Python payload.
-    scripts = []
-    for _, _, files in prepared:
-        scripts.append({str(name): data for name, data in files if name.suffix == ".py"})
-    if scripts[0] != scripts[1]:
-        raise ValueError("Python code differs between languages")
+    # R36 permits only the LANGUAGE line to differ between the two programs.
+    programs = [python_payload(files, language) for language, _, files in prepared]
+    if programs[0] != programs[1]:
+        raise ValueError("Python code differs beyond the LANGUAGE line")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     sums = []
     for language, version, files in prepared:
-        name = "hopper-documentation-openai-" + language + "-" + version + ".zip"
+        name = "hopper-documentation-openai-" + version + "-" + language + ".zip"
         target = output / name
         with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for relative, data in files:

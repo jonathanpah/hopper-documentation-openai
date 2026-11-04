@@ -1,0 +1,16 @@
+{
+  "nada_relevante": false, "resumo": "Formato revisto",
+  "conversa_simplificada": "**Assunto: revisão do gráfico.**\n\nA revisão encerrou a escolha pendente. (M15-4e5f6a7b)",
+  "itens_novos": [],
+  "mudancas": [
+    {"id": "PD1-4e5f6a7b", "situacao": "encerrada em M15-4e5f6a7b (escolha registrada)", "origem": ["M15-4e5f6a7b"]},
+    {"id": "PD99-4e5f6a7b", "situacao": "encerrada em M15-4e5f6a7b (pedido inexistente)", "origem": ["M15-4e5f6a7b"]}
+  ],
+  "handoff": {
+    "objetivo": "Registrar a revisão. (M15-4e5f6a7b)", "pautas_e_estado": "A escolha foi registrada. (M15-4e5f6a7b)",
+    "proximo_passo": "Continuar o painel. (M15-4e5f6a7b)", "decisoes_e_autorizacoes": "Ler a escolha. (M15-4e5f6a7b)",
+    "restricoes": "Sem novas restrições. (M15-4e5f6a7b)", "descobertas": "Sem novas descobertas. (M15-4e5f6a7b)",
+    "pendencias": "A escolha foi encerrada. (M15-4e5f6a7b)", "lacunas": "Sem nova lacuna. (M15-4e5f6a7b)",
+    "como_retomar": "Ler o registro. (M15-4e5f6a7b)"
+  }
+}

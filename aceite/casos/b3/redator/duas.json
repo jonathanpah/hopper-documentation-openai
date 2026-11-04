@@ -1,0 +1,15 @@
+{
+  "nada_relevante":false,"resumo":"Relatórios verde e laranja migrados","itens_novos":[
+    {"ref":"N1","tipo":"D","texto":"Usar verde.","conversa":"019ca124-4000-7000-8000-1010b1c2d3e4","origem":["handoff-20260110-100000-b1c2d3e4.md"],"situacao":"vigente","recomendacao":"","depende_de":""},
+    {"ref":"N2","tipo":"F","texto":"Criar verde.txt.","conversa":"019ca124-4000-7000-8000-1010b1c2d3e4","origem":["handoff-20260110-100000-b1c2d3e4.md"],"situacao":"concluída","recomendacao":"","depende_de":""},
+    {"ref":"N3","tipo":"PD","texto":"Revisar verde.txt.","conversa":"019ca124-4000-7000-8000-1010b1c2d3e4","origem":["handoff-20260111-110000-b1c2d3e4.md"],"situacao":"aberta","recomendacao":"Ler o arquivo.","depende_de":"O usuário aprovar."},
+    {"ref":"N4","tipo":"D","texto":"Usar laranja.","conversa":"019ca125-4000-7000-8000-1010c1d2e3f4","origem":["handoff-20260112-100000-c1d2e3f4.md"],"situacao":"vigente","recomendacao":"","depende_de":""},
+    {"ref":"N5","tipo":"F","texto":"Criar laranja.txt.","conversa":"019ca125-4000-7000-8000-1010c1d2e3f4","origem":["handoff-20260112-100000-c1d2e3f4.md"],"situacao":"concluída","recomendacao":"","depende_de":""},
+    {"ref":"N6","tipo":"PD","texto":"Revisar laranja.txt.","conversa":"019ca125-4000-7000-8000-1010c1d2e3f4","origem":["handoff-20260113-110000-c1d2e3f4.md"],"situacao":"aberta","recomendacao":"Ler o arquivo.","depende_de":"O usuário aprovar."}
+  ],"mudancas":[],"sem_conteudo":[],"handoffs_antigos":[
+    {"conversa":"019ca124-4000-7000-8000-1010b1c2d3e4","resumo":"Relatório verde","handoff":{
+      "objetivo":"Revisar o relatório verde. (handoff-20260110-100000-b1c2d3e4.md)","pautas_e_estado":"N2 está concluída.","proximo_passo":"Revisar N2.","decisoes_e_autorizacoes":"N1 registra verde.","restricoes":"Trabalhar localmente. (handoff-20260110-100000-b1c2d3e4.md)","descobertas":"O arquivo está pronto. (handoff-20260110-100000-b1c2d3e4.md)","pendencias":"N3 continua aberta.","lacunas":"Falta aprovação. (handoff-20260111-110000-b1c2d3e4.md)","como_retomar":"Ler N3."}},
+    {"conversa":"019ca125-4000-7000-8000-1010c1d2e3f4","resumo":"Relatório laranja","handoff":{
+      "objetivo":"Revisar o relatório laranja. (handoff-20260112-100000-c1d2e3f4.md)","pautas_e_estado":"N5 está concluída.","proximo_passo":"Revisar N5.","decisoes_e_autorizacoes":"N4 registra laranja.","restricoes":"Trabalhar localmente. (handoff-20260112-100000-c1d2e3f4.md)","descobertas":"O arquivo está pronto. (handoff-20260112-100000-c1d2e3f4.md)","pendencias":"N6 continua aberta.","lacunas":"Falta aprovação. (handoff-20260113-110000-c1d2e3f4.md)","como_retomar":"Ler N6."}}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "thread": {"id": "01a2b3c4-5d6e-7f80-9a1b-2c3d4e5f6a7b", "cwd": "/tmp/projeto-teste", "historyMode": "paginated"},
+  "turns": [
+    {"id": "t1", "startedAt": 1773500400, "status": "completed", "items": [
+      {"id": "r0", "type": "userMessage", "content": [{"type": "text", "text": "# AGENTS.md instructions for /tmp/projeto-teste\n\nregras do projeto"}]},
+      {"id": "r1", "type": "userMessage", "content": [{"type": "text", "text": "Quero seguir o sitema, claro ou escuro."}, {"type": "localImage", "path": "/tmp/print.png"}]},
+      {"id": "r2", "type": "reasoning", "summary": ["raciocínio interno"], "content": []},
+      {"id": "r3", "type": "agentMessage", "text": "Vou criar o arquivo."},
+      {"id": "r4", "type": "fileChange", "status": "completed", "changes": [{"path": "/tmp/projeto-teste/nota.txt", "kind": {"type": "add"}, "diff": "+teste"}]},
+      {"id": "r5", "type": "commandExecution", "status": "completed", "command": "ls -la", "aggregatedOutput": "nota.txt"},
+      {"id": "r6", "type": "agentMessage", "text": "Arquivo criado."}
+    ]},
+    {"id": "t2", "startedAt": 1773500460, "status": "completed", "items": [
+      {"id": "r7", "type": "userMessage", "content": [{"type": "text", "text": "a senha do servidor é Pl4nt@d4#2026 hoje"}]},
+      {"id": "r8", "type": "agentMessage", "text": "Anotado."}
+    ]},
+    {"id": "t3", "startedAt": 1773500520, "status": "interrupted", "items": [
+      {"id": "r9", "type": "userMessage", "content": [{"type": "text", "text": "Fica pendente escolher o formato do gráfico."}]},
+      {"id": "r10", "type": "plan", "text": "1. Listar formatos.\n2. Comparar."},
+      {"id": "r11", "type": "agentMessage", "text": "Vou listar as opções."}
+    ]},
+    {"id": "t4", "startedAt": 1773500640, "status": "completed", "items": [
+      {"id": "r12", "type": "contextCompaction"},
+      {"id": "r13", "type": "hookPrompt", "fragments": [{"text": "contexto de hook"}]},
+      {"id": "r14", "type": "userMessage", "content": [{"type": "text", "text": "<environment_context>\n  <cwd>/tmp/projeto-teste</cwd>\n</environment_context>"}]},
+      {"id": "r15", "type": "userMessage", "content": [{"type": "text", "text": "Busque o manual do painel."}]},
+      {"id": "r16", "type": "webSearch", "query": "manual do painel"},
+      {"id": "r17", "type": "userMessage", "content": [{"type": "text", "text": "Prefira o PDF."}]},
+      {"id": "r18", "type": "mcpToolCall", "status": "completed", "server": "docs", "tool": "buscar", "result": {"content": []}},
+      {"id": "r19", "type": "functionCallOutput", "name": "buscar", "output": "resultado"},
+      {"id": "r20", "type": "subAgentActivity", "kind": "started"},
+      {"id": "r21", "type": "agentMessage", "text": "Achei o manual em PDF."}
+    ]},
+    {"id": "t5", "startedAt": 1773500700, "status": "failed", "error": {"message": "limite de uso atingido"}, "items": [
+      {"id": "r22", "type": "userMessage", "content": [{"type": "text", "text": "Gere o gráfico."}]}
+    ]}
+  ]
+}

@@ -1,0 +1,1 @@
+Hoje decidimos que o relatório mensal sai toda segunda-feira e que nada será publicado sem a minha revisão. Ficou pendente escolher o formato do gráfico. Registre esta conversa para outra sessão continuar.

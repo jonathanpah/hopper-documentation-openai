@@ -1,0 +1,18 @@
+{
+  "nada_relevante": false,
+  "resumo": "Cor azul escolhida para o painel",
+  "conversa_simplificada": "**Assunto: cor azul no painel.**\n\nO usuário decidiu usar azul. (M15-4e5f6a7b)",
+  "itens_novos": [{"ref": "N1", "tipo": "D", "texto": "Usar azul no painel.", "origem": ["M15-4e5f6a7b"], "situacao": "vigente", "recomendacao": "", "depende_de": ""}],
+  "mudancas": [],
+  "handoff": {
+    "objetivo": "Aplicar azul no painel. (M15-4e5f6a7b)",
+    "pautas_e_estado": "A cor foi escolhida. (M15-4e5f6a7b)",
+    "proximo_passo": "Aplicar a escolha N1. (M15-4e5f6a7b)",
+    "decisoes_e_autorizacoes": "N1 registra azul. (M15-4e5f6a7b)",
+    "restricoes": "Seguir a escolha registrada. (M15-4e5f6a7b)",
+    "descobertas": "O usuário escolheu azul. (M15-4e5f6a7b)",
+    "pendencias": "Nenhuma nova pendência. (M15-4e5f6a7b)",
+    "lacunas": "A aplicação ainda não foi verificada. (M15-4e5f6a7b)",
+    "como_retomar": "Ler N1. (M15-4e5f6a7b)"
+  }
+}

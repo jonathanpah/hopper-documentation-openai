@@ -6,23 +6,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation.py\" hook",
-            "async": true,
-            "timeout": 1800,
-            "statusMessage": "Recording continuity in the background"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|compact",
-        "hooks": [
+            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation_openai.py\" copia",
+            "timeout": 120,
+            "statusMessage": "Copying the full conversation before compaction"
+          },
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation.py\" hook",
-            "timeout": 10,
-            "statusMessage": "Loading recent records from this conversation"
+            "command": "python3 \"${PLUGIN_ROOT}/skills/hopper-documentation-openai/scripts/hopper_documentation_openai.py\" escrita",
+            "async": true,
+            "timeout": 3600,
+            "statusMessage": "Documenting the conversation in the background"
           }
         ]
       }
