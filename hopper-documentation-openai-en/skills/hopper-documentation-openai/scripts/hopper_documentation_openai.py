@@ -307,7 +307,9 @@ def short_name(value):
 
 def read(path):
     try:
-        return Path(path).read_text(encoding="utf-8")
+        # Body lengths and the append-only copy must preserve native newlines.
+        with Path(path).open(encoding="utf-8", newline="") as stream:
+            return stream.read()
     except FileNotFoundError:
         return ""
 
@@ -335,7 +337,7 @@ def inside(path, root):
 
 def checked(path, root):
     path, root = Path(path), Path(root)
-    if not inside(path, root) or inside(path, PLUGIN_ROOT) or path.is_symlink():
+    if root.is_symlink() or not inside(path, root) or inside(path, PLUGIN_ROOT) or path.is_symlink():
         raise Failure("destino de gravação fora das pastas permitidas")
     return path
 
@@ -395,6 +397,7 @@ class Runtime:
         self.conversation, self.action, self.trigger = conversation, action, trigger
         self.executable = ""
         self.project, self.doc, self.folder, self.code = None, None, None, ""
+        self.started_at = None
         self.completed_parts = 0
         self.written = set()
         if conversation:
@@ -686,6 +689,7 @@ class AppServer:
 
 HEADER = re.compile(r"^## (M(\d+)-([a-zA-Z0-9-]+)) · ([^\n]+) · ([^\n]+)\n"
                     r"<!-- registros: ([^\s/]+/[^\s/]+) ([^\s/]+/[^\s/]+) -->\n", re.M)
+BODY_LENGTH = re.compile(r"\n<!-- corpo: (\d+) -->\n\n")
 ITEM_ID = re.compile(r"^(PD|D|F)(\d+)-([a-zA-Z0-9-]+)$")
 REFERENCE = re.compile(r"\b(?:PD|D|F|M)\d+-[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\b")
 PROVISIONAL = re.compile(r"(?<![a-zA-Z0-9_-])N\d+(?![a-zA-Z0-9_-])")
@@ -699,16 +703,31 @@ UUID_AT_END = re.compile(r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-f
 
 
 def messages(text):
-    starts, result = [], []
+    starts, result, position = [], [], 0
     code = re.match(r"^# [^\n]+ · ([a-zA-Z0-9-]+)\n", text)
-    for match in HEADER.finditer(text):
+    while True:
+        match = HEADER.search(text, position)
+        if match is None:
+            break
+        position = match.end()
         if int(match[2]) == len(starts) + 1 and code and match[3] == code[1]:
-            starts.append(match)
-    for n, match in enumerate(starts):
-        end = starts[n + 1].start() if n + 1 < len(starts) else len(text)
+            boundary = BODY_LENGTH.match(text, match.end())
+            body_start, body_end = match.end(), None
+            if boundary:
+                body_start = boundary.end()
+                body_end = body_start + int(boundary[1])
+                if body_end >= len(text) or text[body_end] != "\n":
+                    raise Failure("delimitador do corpo de mensagem inválido")
+                # Skip the complete literal body before looking for a header.
+                position = body_end + 1
+            starts.append((match, body_start, body_end))
+    for n, (match, body_start, body_end) in enumerate(starts):
+        end = starts[n + 1][0].start() if n + 1 < len(starts) else len(text)
+        if body_end is not None:
+            end = body_end
         result.append({"id": match[1], "n": int(match[2]), "code": match[3], "time": match[4],
                        "author": match[5], "first": match[6], "last": match[7],
-                       "text": text[match.end():end].strip("\n"), "raw": text[match.start():end].strip("\n")})
+                       "text": text[body_start:end].strip("\n"), "raw": text[match.start():end].strip("\n")})
     return result
 
 
@@ -720,6 +739,7 @@ def metadata(text, label):
 def select_folder(runtime, first_timestamp):
     """Reuse a migrated folder and disambiguate equal 8-character suffixes."""
     base = runtime.doc / T["conversations"]
+    state = runtime.state()
     code = runtime.conversation.replace("-", "")[-8:]
     candidates = ([runtime.conversation] if runtime.conversation.startswith('antigo') else
                   [runtime.conversation.replace('-', '')[-width:] for width in (8, 12)])
@@ -730,6 +750,8 @@ def select_folder(runtime, first_timestamp):
                 raise Failure("destino de documentação contém link simbólico")
             header = read(folder / T["files"][2]) or read(folder / T["files"][7])
             identity = metadata(header, T["conversation"])
+            if not header and state.get("project") == str(runtime.project) and state.get("folder") == folder.name:
+                identity = runtime.conversation
             if identity == runtime.conversation:
                 runtime.code, runtime.folder = code, folder
                 return
@@ -805,6 +827,12 @@ def render_item(item, runtime):
 
 
 def format_message(number, runtime, turn, author, text, first, last):
+    text = text.strip("\n")
+    # Keep the ordinary Anexo E representation byte-for-byte. Ambiguous bodies
+    # carry their length in a comment, so quoted headers cannot create messages.
+    # Frame a literal leading length comment too, preventing forged framing.
+    if HEADER.search(text + "\n") or text.startswith("<!-- corpo:"):
+        text = "<!-- corpo: {} -->\n\n{}".format(len(text), text)
     return ("## M{}-{} · {} · {}\n<!-- registros: {}/{} {}/{} -->\n\n{}\n".format(
         number, runtime.code, display_time(local_time(turn["startedAt"])), author,
         turn["id"], first, turn["id"], last, text.strip("\n")))
@@ -829,6 +857,7 @@ def copy_history(runtime, deadline=None, hook=False):
                 raise Failure("formato do histórico não reconhecido")
             runtime.project = Path(thread["cwd"]).resolve()
             runtime.doc = runtime.project / DOC_FOLDER
+            runtime.started_at = thread.get("createdAt", 0)
             if runtime.doc.is_symlink() or inside(runtime.doc, PLUGIN_ROOT):
                 raise Failure("destino de documentação fora das pastas permitidas")
             if not runtime.project.is_dir() or not runtime.project.stat().st_mode & 0o222:
@@ -1012,8 +1041,21 @@ def items_in(text):
     return result
 
 
+def unique_items(documents):
+    result = {}
+    for text in documents:
+        entries = items_in(text)
+        if len(entries) != len(re.findall(r"^### ", text, re.M)):
+            raise Failure("identificador de item inválido")
+        for item in entries:
+            if item["id"] in result:
+                raise Failure("identificador de item repetido: " + item["id"])
+            result[item["id"]] = item
+    return result
+
+
 def all_items(runtime):
-    return {item["id"]: item for path in shared_documents(runtime).values() for item in items_in(read(path))}
+    return unique_items(read(path) for path in shared_documents(runtime).values())
 
 
 def all_message_ids(runtime):
@@ -1079,8 +1121,46 @@ def strings_in(value):
             yield from strings_in(item)
 
 
+def validate_content(value):
+    if any(re.match(r"^[ \t]*#{1,6}(?:[ \t]+|$)", line)
+           for text in strings_in(value) for line in text.splitlines()):
+        raise Failure("conteúdo do redator contém cabeçalho estrutural")
+
+
+def validate_simplified(text, existing_messages):
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text.strip()) if paragraph.strip()]
+    subject = re.fullmatch(re.escape(T["subject"]) + r"([^\r\n]+)\*\*", paragraphs[0])
+    if not subject or not subject[1].strip(" *") or len(paragraphs) < 2:
+        raise Failure("conversa simplificada sem assunto ou parágrafos válidos")
+    rejected = []
+    for paragraph in paragraphs[1:]:
+        ending = re.search(r"\(([^()\r\n]+)\)$", paragraph.strip())
+        if not ending:
+            raise Failure("parágrafo da conversa simplificada sem mensagens de origem ao fim")
+        for origin in ending[1].split(","):
+            origin = origin.strip()
+            match = RANGE.fullmatch(origin)
+            if match:
+                if match[2] != match[4] or int(match[1]) > int(match[3]):
+                    raise Failure("intervalo de origem inválido na conversa simplificada")
+                # Check the interval without expanding an untrusted large range.
+                numbers = {int(ref[1:ref.index("-")]) for ref in existing_messages
+                           if re.fullmatch(r"M\d+-" + re.escape(match[2]), ref) and
+                           int(match[1]) <= int(ref[1:ref.index("-")]) <= int(match[3])}
+                if len(numbers) != int(match[3]) - int(match[1]) + 1:
+                    rejected.append(origin)
+            elif not re.fullmatch(r"M\d+-[a-zA-Z0-9-]+", origin):
+                raise Failure("origem de parágrafo deve citar mensagens")
+            elif origin not in existing_messages:
+                rejected.append(origin)
+    if rejected:
+        raise ReferencesRejected(rejected)
+
+
 def validate_response(response, new_messages, existing_items, existing_messages):
     validate_schema(response, SCHEMA)
+    validate_content(response)
     refs = {item["ref"] for item in response["itens_novos"]}
     if len(refs) != len(response["itens_novos"]):
         raise Failure("referências provisórias repetidas")
@@ -1097,8 +1177,8 @@ def validate_response(response, new_messages, existing_items, existing_messages)
             raise Failure("situação de item inválida")
     if response["nada_relevante"] and (response["itens_novos"] or response["mudancas"]):
         raise Failure("resposta sem conteúdo relevante contém alterações")
-    if not response["nada_relevante"] and not response["conversa_simplificada"].startswith(T["subject"]):
-        raise Failure("conversa simplificada sem linha de assunto")
+    if not response["nada_relevante"]:
+        validate_simplified(response["conversa_simplificada"], existing_messages | new_messages)
     rejected = []
     for item in response["itens_novos"] + response["mudancas"]:
         rejected.extend(origin for origin in item["origem"]
@@ -1275,7 +1355,7 @@ def truncate_for_writer(text, available):
     return text[:keep] + notice
 
 
-def next_part(runtime, pending):
+def next_part(runtime, pending, correction=""):
     with runtime.folder_lock():
         documents = {n: read((runtime.folder if n == 7 else runtime.doc) / T["files"][n]) for n in (4, 5, 6, 7)}
         existing_items, existing_messages = all_items(runtime), all_message_ids(runtime)
@@ -1287,14 +1367,14 @@ def next_part(runtime, pending):
         empty = writer_prompt(runtime, interval, "", documents)
         if len(empty) > 500000:
             raise Failure("documentos grandes demais para o redator")
-        available = min(part_limit, budget - len(empty))
+        available = min(part_limit, budget - len(empty) - len(correction))
         body = "\n\n".join(writer_message(m) for m in candidate)
         if len(body) > available and part:
             break
         if len(body) > available:
             body = truncate_for_writer(body, available)
         part, excerpt = candidate, body
-        prompt = writer_prompt(runtime, interval, excerpt, documents)
+        prompt = writer_prompt(runtime, interval, excerpt, documents) + correction
         if len("\n\n".join(writer_message(m) for m in candidate)) > available:
             break
     return part, prompt, existing_items, existing_messages
@@ -1328,12 +1408,14 @@ def call_validated_writer(runtime, prompt, part, existing_items, existing_messag
                           "\nRejected references. Use sources from the new excerpt and existing references.\n")
             correction += "\n".join(error.references) + "\n"
             if len(prompt) + len(correction) > limit("ORCAMENTO", 600000):
-                start = prompt.index("<trecho_novo>\n") + len("<trecho_novo>\n")
-                end = prompt.index("\n</trecho_novo>", start)
-                excerpt = prompt[start:end]
-                room = len(excerpt) - len(correction)
-                prompt = prompt[:start] + truncate_for_writer(excerpt, room) + prompt[end:]
-            prompt += correction
+                # Rebuild the part by whole messages with the correction inside
+                # the budget. The caller consumes only this smaller prefix;
+                # every remaining message stays pending for the next part.
+                retry_part, prompt, existing_items, existing_messages = next_part(runtime, part, correction)
+                part[:] = retry_part
+                new_messages = {message["id"] for message in part}
+            else:
+                prompt += correction
     raise Failure("resposta do redator inválida")
 
 
@@ -1369,24 +1451,35 @@ def item_block(identity, item, interval):
 
 
 def append_items(runtime, response, interval, mapping):
+    originals = {path: read(path) for path in shared_documents(runtime).values()}
+    rendered = dict(originals)
     for kind, path in shared_documents(runtime).items():
-        text = read(path)
+        text = originals[path]
         existing = {item["id"] for item in items_in(text)}
         additions = [item_block(mapping[item["ref"]], replace_refs(item, mapping), interval)
                      for item in response["itens_novos"] if item["tipo"] == kind and mapping[item["ref"]] not in existing]
         if additions:
-            atomic(path, text.rstrip("\n") + "\n\n" + "\n".join(additions), runtime.doc)
+            rendered[path] = text.rstrip("\n") + "\n\n" + "\n".join(additions)
+    # Check the complete render before writing even the first shared file.
+    unique_items(rendered.values())
+    for path, text in rendered.items():
+        if text != originals[path]:
+            atomic(path, text, runtime.doc)
 
 
-def apply_changes(runtime, response, mapping):
+def apply_changes(runtime, response, mapping, operation):
     missing = []
-    for change in replace_refs(response["mudancas"], mapping):
+    for number, change in enumerate(replace_refs(response["mudancas"], mapping)):
+        marker = "<!-- applied-change: " + short_name(operation + "\n" + str(number)) + " -->"
         applied = False
         for kind, path in shared_documents(runtime).items():
             text = read(path)
             item = next((item for item in items_in(text) if item["id"] == change["id"]), None)
             if item is None:
                 continue
+            if marker in item["body"].splitlines():
+                applied = True
+                break
             if not valid_status(kind, change["situacao"]):
                 raise Failure("situação de item inválida")
             fields = item["fields"]
@@ -1398,6 +1491,10 @@ def apply_changes(runtime, response, mapping):
                           lambda match: match[1] + ", ".join(origins), item["body"], flags=re.M)
             body = re.sub(r"(^- " + re.escape(T["status"]) + r": ).*$",
                           lambda match: match[1] + change["situacao"], body, flags=re.M)
+            # Commit the operation identity in the very same atomic file write
+            # as the change. Later conversations retain it when updating fields,
+            # so replay also works after a crash before any journal checkpoint.
+            body = body.rstrip("\n") + "\n" + marker + "\n\n"
             header_end = text.index("\n", item["start"]) + 1
             atomic(path, text[:header_end] + body + text[item["end"]:], runtime.doc)
             applied = True
@@ -1442,12 +1539,18 @@ def table_cell(value):
 
 
 def write_index(runtime):
+    checked(runtime.doc, runtime.doc)
     lines = ["# " + T["titles"][1], "", T["project"] + ": " + str(runtime.project), "",
              "## " + T["order"], ""]
     lines += [str(n) + ". " + instruction for n, instruction in enumerate(T["reading"], 1)]
     lines += ["", "## " + T["table"], "", "| " + " | ".join(T["columns"]) + " |",
               "| --- | --- | --- | --- | --- | --- |"]
     base = runtime.doc / T["conversations"]
+    states = {}
+    for path in (runtime.data / "conversas").glob("*.json"):
+        state = parse_json(read(path))
+        if state.get("project") == str(runtime.project) and state.get("folder"):
+            states[state["folder"]] = state
     for folder in sorted(base.glob("*"), reverse=True):
         if not folder.is_dir():
             continue
@@ -1456,7 +1559,8 @@ def write_index(runtime):
             continue
         handoff = read(folder / T["files"][7])
         full = read(folder / T["files"][2])
-        identity = metadata(full or handoff, T["conversation"]) or match[2]
+        identity = (metadata(full or handoff, T["conversation"]) or
+                    states.get(folder.name, {}).get("conversation") or match[2])
         state = runtime.state(identity)
         last = metadata(handoff, T["last"])
         if not full:
@@ -1501,12 +1605,14 @@ def publish_part(runtime, response, start, end, journal=None):
     """The folder lock covers reservation, journal and every shared-file write."""
     path = journal_path(runtime, start, end)
     interval = message_range(runtime.code, start, end)
+    validate_content(response)
     with runtime.folder_lock():
         initialize_documents(runtime)
         if journal is None:
             journal = {"conversation": runtime.conversation, "project": str(runtime.project),
                        "folder": runtime.folder.name, "code": runtime.code, "start": start, "end": end,
-                       "response": response, "mapping": reserve_ids(runtime, response), "date": display_time()}
+                       "response": response, "mapping": reserve_ids(runtime, response), "date": display_time(),
+                       "operation": uuid.uuid4().hex}
             atomic_json(path, journal, runtime.data)
         mapping = journal["mapping"]
         interrupt("depois-do-diario")
@@ -1520,7 +1626,8 @@ def publish_part(runtime, response, start, end, journal=None):
             atomic(d3, simplified + simplified_block(runtime, resolved, start, end), runtime.doc)
         interrupt("meio-da-gravacao")
         append_items(runtime, response, interval, mapping)
-        missing = apply_changes(runtime, response, mapping)
+        operation = journal.get("operation") or short_name(str(path) + "\n" + journal["date"])
+        missing = apply_changes(runtime, response, mapping, operation)
         d7 = runtime.folder / T["files"][7]
         last = "M{}-{}".format(end, runtime.code)
         old_handoff = read(d7)
@@ -1717,6 +1824,7 @@ def migration_part(runtime, journal):
 
 def validate_migration(response, names, identities, existing, sources):
     validate_schema(response, MIGRATION_SCHEMA)
+    validate_content(response)
     refs = {item['ref'] for item in response['itens_novos']}
     if len(refs) != len(response['itens_novos']):
         raise Failure('referências provisórias repetidas')
@@ -1782,8 +1890,12 @@ def verify_migration(runtime, journal):
             required = [T['source'], T['status'], T['range']]
             if kind == 'PD':
                 required += [T['recommendation'], T['depends']]
+            first_field = re.search(r'^- (?:' + '|'.join(re.escape(label) for label in required) + r'):',
+                                    item['body'], re.M)
+            prefix = item['body'][:first_field.start()] if first_field else ''
+            content = re.sub(r'<!--.*?-->', '', prefix, flags=re.S).strip()
             if (item['id'] in seen or item['kind'] != kind or item['n'] < 1 or
-                    not item['body'].split('\n\n')[0].strip() or
+                    not content or not prefix.endswith('\n\n') or
                     any(label not in fields for label in required) or
                     any(len(re.findall(r'^- ' + re.escape(label) + ':', item['body'], re.M)) != 1 for label in required) or
                     not fields[T['source']] or not fields[T['range']] or not valid_status(kind, fields[T['status']])):
@@ -1880,16 +1992,20 @@ def migrate_project(runtime):
                         counters[key] = counters.get(key, max([i['n'] for i in present.values()
                             if (i['kind'], i['code']) == key] or [0])) + 1
                         mapping[item['ref']] = '{}{}-{}'.format(key[0], counters[key], key[1])
-                    current = {'response': response, 'mapping': mapping, 'cursor': cursor, 'date': display_time()}
+                    current = {'response': response, 'mapping': mapping, 'cursor': cursor, 'date': display_time(),
+                               'operation': uuid.uuid4().hex}
                     journal['current'] = current
                     atomic_json(path, journal, runtime.data)
             interrupt('depois-do-diario')
             with runtime.folder_lock():
                 initialize_documents(runtime)
                 response, mapping = current['response'], current['mapping']
+                validate_content(response)
                 append_items(runtime, response, T['migration'], mapping)
                 interrupt('meio-da-gravacao')
-                missing = apply_changes(runtime, response, mapping)
+                operation = current.get('operation') or short_name(str(path) + '\n' + current['date'] +
+                                                                  '\n' + json.dumps(current['cursor']))
+                missing = apply_changes(runtime, response, mapping, operation)
                 if missing:
                     runtime.log('migracao', 'em andamento', 'mudança não aplicada: ' + ', '.join(missing))
                 for handoff in replace_refs(response['handoffs_antigos'], mapping):
@@ -1941,6 +2057,7 @@ def run_round(runtime):
             raise Failure('formato do histórico não reconhecido')
         runtime.project = Path(thread['cwd']).resolve()
         runtime.doc = runtime.project / DOC_FOLDER
+        runtime.started_at = thread.get('createdAt', 0)
         excluded = {str(Path(p).resolve()) for p in runtime.config['pastas_sem_migracao']}
         if runtime.config['migracao_automatica'] and str(runtime.project) not in excluded:
             migrate_project(runtime)
@@ -1984,10 +2101,16 @@ def record_failure(runtime, error):
     reason = failure_reason(error)
     if runtime is not None:
         try:
-            if runtime.project is not None and runtime.doc and runtime.doc.is_dir():
+            if (runtime.project is not None and runtime.doc and runtime.project.is_dir() and
+                    runtime.project.stat().st_mode & 0o222):
+                checked(runtime.doc, runtime.doc)
                 with runtime.folder_lock():
                     if runtime.conversation:
+                        if runtime.folder is None:
+                            select_folder(runtime, runtime.started_at if runtime.started_at is not None else now().timestamp())
+                        checked(runtime.folder, runtime.doc).mkdir(parents=True, exist_ok=True)
                         save_state(runtime, "falhou", reason=reason)
+                    initialize_documents(runtime)
                     write_index(runtime)
         except (OSError, ValueError, Failure):
             pass
