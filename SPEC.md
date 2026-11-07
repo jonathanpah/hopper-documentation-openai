@@ -1767,3 +1767,15 @@ codex plugin add hopper-documentation-openai@hopper-documentation-openai
 **Voltar à versão atual.** Os mesmos 4 comandos, com `--ref v0.1.1`, com o "sim" da seção 10.
 
 **Configuração do plugin.** Antes da primeira instalação de U8, gravar em cada conta `<pasta de dados>/config.json` com `{"migracao_automatica": false}`. Na conta `jonathan` do MacBook, acrescentar `"executavel"` com o caminho registrado em U1, se o `PATH` do gatilho não achar o Codex. Depois de instalar e antes da aprovação de hook, rodar o comando `config` do programa instalado e conferir o caminho e os valores (R45).
+
+## Versão 2.1.0, mudanças sobre esta spec
+
+Pedido e autorização do proprietário em 07/11/2026, para a skill do Codex ficar igual à versão 2.1.0 da skill do Claude. Estas mudanças prevalecem sobre os trechos desta spec que as contradizem. Os critérios congelados em `aceite/` foram ajustados só no que elas exigem.
+
+1. **Entrada do redator (Anexo D).** `<decisoes>` traz só as decisões vigentes, com o texto inteiro e sem os dados de controle. `<funcoes>` traz só as funções implementadas da conversa da rodada. `<pendencias>` traz só as pendências abertas, completas. O programa continua lendo os documentos inteiros para numerar os itens e conferir as citações.
+2. **Decisão repetida.** Uma decisão nova com o mesmo texto de uma decisão vigente reaproveita o identificador da existente. A comparação ignora maiúsculas, espaços repetidos e o ponto final. Uma mudança que aponta para o próprio item reaproveitado não se aplica.
+3. **Documento 1.** A ordem de leitura manda documentar a conversa antes de continuá-la, ler o handoff da conversa que vai continuar e consultar os demais documentos só quando precisar de um detalhe.
+4. **Rodada a pedido de outra conversa.** `--conversa` aceita o código de 8 ou 12 letras do índice. O programa acha a conversa pelos arquivos de histórico do Codex, inclusive os arquivados, na mesma conta. Código sem conversa ou com mais de 1 conversa falha com motivo claro.
+5. **Recomendação e dependência em D e F.** Os 2 campos são limpos nos tipos D e F, sem recusar a resposta inteira.
+6. **Regras de escrita.** O arquivo de regras ganhou as regras de forma do proprietário.
+7. **Marca dos critérios congelados.** Cada versão tem a sua marca de critérios, com o nome `criterios-v<versão>`. A verificação confere `criterios-v2.1.0`. Os critérios da versão 2.0 ficam em `criterios-v2.0.0`.

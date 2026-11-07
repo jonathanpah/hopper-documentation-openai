@@ -1,6 +1,6 @@
 ---
 name: hopper-documentation-openai
-description: Documents the current Codex conversation in 7 documents (index, full conversation, simplified conversation, decisions, implemented functions, pending items and handoff) in the project's docs-by-hopper-documentation-openai folder. Use when the user asks to document or record the conversation, save progress or write a handoff. Do not use to explain, review or edit this skill.
+description: Documents the current Codex conversation, or another conversation given by its code, in 7 documents (index, full conversation, simplified conversation, decisions, implemented functions, pending items and handoff) in the project's docs-by-hopper-documentation-openai folder. Use when the user asks to document or record the conversation, save progress, write a handoff or document another conversation before continuing it. Do not use to explain, review or edit this skill.
 ---
 
 # hopper-documentation-openai
@@ -26,6 +26,8 @@ The hook copies before every compaction and starts the same run in a detached pr
    ```sh
    python3 "<this skill folder>/scripts/hopper_documentation_openai.py" rodada --conversa "$CODEX_THREAD_ID"
    ```
+
+   If the request is to document another conversation, replace `"$CODEX_THREAD_ID"` with the code the user gives. The code has 8 or 12 letters and appears in the table of the folder's index, as in "document conversation 57f1a26f". The full identifier also works. The other conversation must have run on this same machine and in this same account.
 
 2. Say in 1 sentence that documentation started in the background.
 3. Follow the same process until it finishes. If the tool returns a session identifier, use it to retrieve the remaining output.

@@ -2,6 +2,8 @@
 
 The program writes the headers, the block titles and the final identifiers. You write the content. Use `N1`, `N2`… for new items in any field; the program replaces those references with the final identifiers.
 
+The message brings only what you need to see from documents 4, 5 and 6. The decisions part brings only the decisions in force, with the full text and without the control data. The implemented functions part brings only those of this conversation. The pending items part brings only the open ones, in full. The items that do not appear stay in the documents and can be cited by their identifier.
+
 Cite only messages from the new segment or before it and items that exist in the folder. Use `N1`, `N2`… for new items in this response. To discuss what comes after the new segment, write without an identifier. During migration, cite old files and items, since the messages do not exist.
 
 ## Document 3, simplified conversation
@@ -41,11 +43,15 @@ Choose the chart format.
 - Run range: M56-4e5f6a7b a M80-4e5f6a7b
 ```
 
+Before creating a decision, look in the decisions part for a decision with the same meaning. If it exists, cite the existing one and do not create another. If the new decision changes an existing one, create the new one and mark the old one as `replaced by N<n>` in `mudancas`.
+
 To change the status of an item that already exists, including one from another conversation of the same folder, use `mudancas`, with the identifier, the new status and the source. The source of a new item or a change is a message from the new segment or an existing item, never a message from an earlier segment. During migration, the source is the old file name.
 
 ## Document 7, handoff
 
 The 9 keys of the `handoff` field become the 9 sections, in this order: Goal; Topics and current state; Next step; Decisions and authorizations in force; Constraints in force; Findings and discarded approaches; Pending items and commitments; Gaps; How to resume. Write each section in short paragraphs, each with the source messages in parentheses. The handoff is rewritten in full on every run: include what still holds from the previous handoff.
+
+The handoff must explain itself, without opening documents 4, 5 and 6. In the text, every cited item comes with a short description, for example `PD24-b2b21be3 (check whether the Mac load breaks timing tests)`. Do not cite an item by its identifier alone. The list of sources at the end of each paragraph keeps only the identifiers.
 
 ## Summary
 

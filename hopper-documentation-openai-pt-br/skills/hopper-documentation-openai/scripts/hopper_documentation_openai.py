@@ -57,12 +57,13 @@ TEXTS = {
         "sections": ["Objetivo", "Pautas e estado atual", "Próximo passo", "Decisões e autorizações vigentes",
                      "Restrições vigentes", "Descobertas e tentativas descartadas", "Pendências e compromissos",
                      "Lacunas", "Como retomar"],
-        "reading": ["Este índice.", "O handoff da conversa mais recente (documento 7).",
-            "As pendências. [6-pendencias.md](6-pendencias.md).",
-            "As decisões. [4-decisoes.md](4-decisoes.md).",
-            "As funções implementadas. [5-funcoes.md](5-funcoes.md).",
-            "A conversa simplificada da conversa que você vai continuar (documento 3).",
-            "A conversa integral, para conferir uma origem (documento 2)."],
+        "reading": ["Este índice.",
+            "Antes de continuar uma conversa, peça à skill para documentá-la, com o código da tabela abaixo, por exemplo "
+            "\"documente a conversa {exemplo}\". Se não houver nada novo, a skill avisa sem chamar a IA.",
+            "O handoff da conversa que você vai continuar (documento 7). Sem indicação, o da conversa mais recente.",
+            "Os demais documentos ficam para consulta, quando precisar de um detalhe. São as pendências "
+            "([6-pendencias.md](6-pendencias.md)), as decisões ([4-decisoes.md](4-decisoes.md)), as funções implementadas "
+            "([5-funcoes.md](5-funcoes.md)), a conversa simplificada (documento 3) e a conversa integral (documento 2)."],
         "situations": {"D": ["vigente", "substituída por ", "revogada em "],
                        "F": ["concluída", "substituída por ", "desfeita em "],
                        "PD": ["aberta", "encerrada em "]},
@@ -96,11 +97,14 @@ TEXTS = {
         "sections": ["Goal", "Topics and current state", "Next step", "Decisions and authorizations in force",
                      "Constraints in force", "Findings and discarded approaches", "Pending items and commitments",
                      "Gaps", "How to resume"],
-        "reading": ["This index.", "The handoff of the most recent conversation (document 7).",
-            "Pending items. [6-pending.md](6-pending.md).", "Decisions. [4-decisions.md](4-decisions.md).",
-            "Implemented functions. [5-functions.md](5-functions.md).",
-            "The simplified conversation of the conversation you will continue (document 3).",
-            "The full conversation, to check a source (document 2)."],
+        "reading": ["This index.",
+            "Before continuing a conversation, ask the skill to document it, with the code from the table below, for example "
+            "\"document conversation {exemplo}\". If there is nothing new, the skill says so without calling the AI.",
+            "The handoff of the conversation you are going to continue (document 7). Without an indication, the one of the "
+            "most recent conversation.",
+            "The other documents are for reference, when you need a detail. They are the pending items "
+            "([6-pending.md](6-pending.md)), the decisions ([4-decisions.md](4-decisions.md)), the implemented functions "
+            "([5-functions.md](5-functions.md)), the simplified conversation (document 3) and the full conversation (document 2)."],
         "situations": {"D": ["in force", "replaced by ", "revoked in "],
                        "F": ["done", "replaced by ", "undone in "], "PD": ["open", "closed in "]},
         "done": "done", "failed": "failed", "success": "Documentation done: {}.",
@@ -117,104 +121,10 @@ TEXTS = {
 T = TEXTS[LANGUAGE]
 
 # C14. Exact reference text, embedded until the packaged files arrive in U7.
-FALLBACK_RULES = {'pt-br': '# Regras de escrita\n'
-          '\n'
-          'Valem para os documentos 3 a 7. Formato amigável para TDAH, sem infantilizar nem sacrificar a '
-          'precisão.\n'
-          '\n'
-          '1. Comece pela conclusão. Depois, explique só o necessário, em ordem lógica e sem pular etapas '
-          'indispensáveis.\n'
-          '2. Escreva para um leitor inteligente que não conhece o tema. Não infantilize e não presuma '
-          'conhecimento técnico.\n'
-          '3. Comece cada bloco da conversa simplificada com 1 linha que diz o assunto.\n'
-          '4. Escreva uma ideia por frase e um assunto por parágrafo, com até 6 frases.\n'
-          '5. Use até 20 palavras por frase em instruções e até 25 em explicações.\n'
-          '6. Escreva uma ação por instrução, com o verbo no imperativo.\n'
-          '7. Use voz ativa e ordem direta, sem frases intercaladas.\n'
-          '8. Use palavras comuns e literais, sem jargão, e o mesmo termo para o mesmo conceito.\n'
-          '9. Explique cada termo técnico ou sigla na primeira vez em que aparecer.\n'
-          '10. Prefira verbos a substantivos. Por exemplo, "verificar", e não "fazer a verificação".\n'
-          '11. Corte introduções, repetições, redundâncias, floreios, tangentes, recapitulações, exemplos '
-          'dispensáveis e encerramentos genéricos.\n'
-          '12. Nunca omita fatos, números, riscos, limites, ressalvas ou conceitos. Cortar redundância não '
-          'pode apagar um conceito.\n'
-          '13. Use títulos e listas só quando facilitarem a leitura. Destaque em negrito o que o leitor deve '
-          'reter.\n'
-          '14. Cada pendência traz o que está pendente, a recomendação e o que depende do usuário. Sugestão '
-          'não é pendência.\n'
-          '\n'
-          '## Regras de fidelidade\n'
-          '\n'
-          '15. Diferencie fato, relato, proposta e decisão. Sem evidência na conversa, escreva "relatado, '
-          'não verificado".\n'
-          '16. Uma autorização vale só no alcance dito. Registrar uma pendência não autoriza executá-la.\n'
-          '17. A última versão de um fato prevalece em todos os documentos. Falta de registro não prova que '
-          'algo não aconteceu.\n'
-          '18. Toda afirmação dos documentos 3 a 7 cita a mensagem de origem.\n',
- 'en': '# Writing rules\n'
-       '\n'
-       'They apply to documents 3 to 7. ADHD-friendly format, without talking down and without sacrificing '
-       'precision.\n'
-       '\n'
-       '1. Start with the conclusion. Then explain only what is needed, in logical order and without '
-       'skipping indispensable steps.\n'
-       '2. Write for an intelligent reader who does not know the subject. Do not talk down and do not assume '
-       'technical knowledge.\n'
-       '3. Start each block of the simplified conversation with 1 line that states the subject.\n'
-       '4. Write one idea per sentence and one subject per paragraph, with up to 6 sentences.\n'
-       '5. Use up to 20 words per sentence in instructions and up to 25 in explanations.\n'
-       '6. Write one action per instruction, with the verb in the imperative.\n'
-       '7. Use the active voice and direct order, without interpolated clauses.\n'
-       '8. Use common, literal words, without jargon, and the same term for the same concept.\n'
-       '9. Explain each technical term or acronym the first time it appears.\n'
-       '10. Prefer verbs to nouns. For example, "check", not "perform a check".\n'
-       '11. Cut introductions, repetitions, redundancies, flourishes, tangents, recaps, dispensable examples '
-       'and generic closings.\n'
-       '12. Never omit facts, numbers, risks, limits, caveats or concepts. Cutting redundancy must not erase '
-       'a concept.\n'
-       '13. Use headings and lists only when they make reading easier. Put in bold what the reader must '
-       'retain.\n'
-       '14. Each pending item states what is pending, the recommendation and what depends on the user. A '
-       'suggestion is not a pending item.\n'
-       '\n'
-       '## Fidelity rules\n'
-       '\n'
-       '15. Distinguish fact, report, proposal and decision. Without evidence in the conversation, write '
-       '"reported, not verified".\n'
-       '16. An authorization is valid only in the scope stated. Recording a pending item does not authorize '
-       'executing it.\n'
-       '17. The latest version of a fact prevails in every document. A missing record does not prove that '
-       'something did not happen.\n'
-       '18. Every statement in documents 3 to 7 cites its source message.\n'}
-
-# A self-contained interim template keeps U3/U4 usable before U7 adds the
-# packaged reference files. When present, those files are always used verbatim.
-FALLBACK_TEMPLATES = {
-    "pt-br": """# Modelos
-
-Documento 3. Comece com **Assunto: resumo do assunto.**. Cada parágrafo seguinte
-termina com as mensagens de origem entre parênteses, por exemplo (M1-4e5f6a7b).
-Documentos 4 a 6. Registre decisões, entregas concluídas e pendências com origem.
-Use N1, N2… para novos itens. Nas pendências, inclua recomendacao e depende_de.
-Decisões usam vigente, substituída por <ID> ou revogada em <M-ID>.
-Entregas usam concluída, substituída por <ID> ou desfeita em <M-ID>.
-Pendências usam aberta ou encerrada em <M-ID> (<motivo curto>).
-Documento 7. Preencha as 9 chaves do esquema. Preserve o que continua valendo
-no handoff anterior. Toda afirmação cita uma mensagem de origem.
-""",
-    "en": """# Templates
-
-Document 3. Begin with **Subject: short subject.**. Each following paragraph
-ends with source message identifiers in parentheses, for example (M1-4e5f6a7b).
-Documents 4 to 6. Record decisions, completed deliveries and pending items with sources.
-Use N1, N2… for new items. Pending items include recomendacao and depende_de.
-Decisions use in force, replaced by <ID> or revoked in <M-ID>.
-Deliveries use done, replaced by <ID> or undone in <M-ID>.
-Pending items use open or closed in <M-ID> (<short reason>).
-Document 7. Fill all 9 schema keys. Preserve what still applies in the previous
-handoff. Every statement cites a source message.
-""",
-}
+FALLBACK_RULES = {'pt-br': '# Regras de escrita\n\nValem para os documentos 3 a 7. Formato amigável para TDAH, sem infantilizar nem sacrificar a precisão.\n\n1. Comece pela conclusão. Depois, explique só o necessário, em ordem lógica e sem pular etapas indispensáveis.\n2. Escreva para um leitor inteligente que não conhece o tema. Não infantilize e não presuma conhecimento técnico.\n3. Comece cada bloco da conversa simplificada com 1 linha que diz o assunto.\n4. Escreva uma ideia por frase e um assunto por parágrafo, com 3 ou 4 frases.\n5. Use frases com média de 15 palavras e no máximo 25.\n6. Escreva uma ação por instrução, com o verbo no imperativo.\n7. Use voz ativa e ordem direta, sem frases intercaladas.\n8. Use palavras comuns e literais, sem jargão, e o mesmo termo para o mesmo conceito.\n9. Explique cada termo técnico ou sigla na primeira vez em que aparecer.\n10. Prefira verbos a substantivos. Por exemplo, "verificar", e não "fazer a verificação".\n11. Corte introduções, repetições, redundâncias, floreios, tangentes, recapitulações, exemplos dispensáveis e encerramentos genéricos.\n12. Nunca omita fatos, números, riscos, limites, ressalvas ou conceitos. Cortar redundância não pode apagar um conceito.\n13. Use títulos e listas só quando facilitarem a leitura. Destaque em negrito o que o leitor deve reter.\n14. Cada pendência traz o que está pendente, a recomendação e o que depende do usuário. Sugestão não é pendência.\n\n## Regras de forma\n\n15. Escreva "existe" ou "existem" no lugar do "há" existencial. O "há" de tempo continua.\n16. Não use travessão nem meia-risca. O hífen continua permitido.\n17. Não use dois-pontos em frases, explicações e introduções de listas. O padrão "Título: descrição" é permitido.\n18. Não use barras para juntar alternativas. Escolha entre "e" e "ou".\n19. Use algarismos para quantidades, prazos, valores, percentuais e horários. Preserve o formato e a precisão dos valores, sem arredondar.\n20. Em intervalos de horários, use "às", como em "das 10h às 10h05".\n21. Coloque "só", "apenas" e "sempre" junto da palavra que modificam.\n22. Escreva "por exemplo", "em um" e "em uma" por extenso.\n23. Não use juridiquês, tom promocional, floreio, pleonasmo ou clichê.\n24. Use "deve" para obrigação, "não pode" para proibição, "pode" para opção e "recomendo" para recomendação.\n\n## Regras de fidelidade\n\n25. Diferencie fato, relato, proposta e decisão. Sem evidência na conversa, escreva "relatado, não verificado".\n26. Uma autorização vale só no alcance dito. Registrar uma pendência não autoriza executá-la.\n27. A última versão de um fato prevalece em todos os documentos. Falta de registro não prova que algo não aconteceu.\n28. Toda afirmação dos documentos 3 a 7 cita a mensagem de origem.\n',
+                  'en': '# Writing rules\n\nThey apply to documents 3 to 7. ADHD-friendly format, without talking down and without sacrificing precision.\n\n1. Start with the conclusion. Then explain only what is needed, in logical order and without skipping indispensable steps.\n2. Write for an intelligent reader who does not know the subject. Do not talk down and do not assume technical knowledge.\n3. Start each block of the simplified conversation with 1 line that states the subject.\n4. Write one idea per sentence and one subject per paragraph, with 3 or 4 sentences.\n5. Use sentences with an average of 15 words and at most 25.\n6. Write one action per instruction, with the verb in the imperative.\n7. Use the active voice and direct order, without interpolated clauses.\n8. Use common, literal words, without jargon, and the same term for the same concept.\n9. Explain each technical term or acronym the first time it appears.\n10. Prefer verbs to nouns. For example, "check", not "perform a check".\n11. Cut introductions, repetitions, redundancies, flourishes, tangents, recaps, dispensable examples and generic closings.\n12. Never omit facts, numbers, risks, limits, caveats or concepts. Cutting redundancy must not erase a concept.\n13. Use headings and lists only when they make reading easier. Put in bold what the reader must retain.\n14. Each pending item states what is pending, the recommendation and what depends on the user. A suggestion is not a pending item.\n\n## Form rules\n\n15. Do not use em dashes or en dashes. The hyphen is still allowed.\n16. Do not use colons in sentences, explanations or list introductions. The "Title: description" pattern is allowed.\n17. Do not use slashes to join alternatives. Choose between "and" and "or".\n18. Use digits for quantities, deadlines, amounts, percentages and times. Keep the format and precision of values, without rounding.\n19. Put "only", "just" and "always" next to the word they modify.\n20. Do not use legalese, promotional tone, flourish, pleonasm or cliché.\n21. Use "must" for obligation, "must not" for prohibition, "may" for option and "I recommend" for a recommendation.\n\n## Fidelity rules\n\n22. Distinguish fact, report, proposal and decision. Without evidence in the conversation, write "reported, not verified".\n23. An authorization is valid only in the scope stated. Recording a pending item does not authorize executing it.\n24. The latest version of a fact prevails in every document. A missing record does not prove that something did not happen.\n25. Every statement in documents 3 to 7 cites its source message.\n'}
+FALLBACK_TEMPLATES = {'pt-br': '# Modelos dos documentos\n\nO programa grava os cabeçalhos, os títulos dos blocos e os identificadores finais. Você escreve o conteúdo. Use `N1`, `N2`… para os itens novos em qualquer campo; o programa troca essas referências pelos identificadores finais.\n\nA mensagem traz só o que você precisa ver dos documentos 4, 5 e 6. Na parte das decisões vêm só as decisões vigentes, com o texto inteiro e sem os dados de controle. Na parte das funções implementadas vêm só as desta conversa. Na parte das pendências vêm só as abertas, completas. Os itens que não aparecem continuam nos documentos e podem ser citados pelo identificador.\n\nCite só mensagens do trecho novo ou anteriores a ele e itens existentes na pasta. Use `N1`, `N2`… para itens novos desta resposta. Para falar do que vem depois do trecho novo, escreva sem identificador. Na migração, cite arquivos antigos e itens, pois as mensagens não existem.\n\n## Documento 3, conversa simplificada\n\nO campo `conversa_simplificada` é o corpo de 1 bloco. Ele começa com a linha de assunto e segue com parágrafos curtos. Cada parágrafo termina com as mensagens de origem entre parênteses, separadas por vírgula. Um intervalo usa a forma `M3-4e5f6a7b a M7-4e5f6a7b`.\n\n```markdown\n**Assunto: falha do registro automático do Codex.**\n\nO registro automático do Codex falhou antes da compactação. O programa recusou 2 citações que não estavam iguais na conversa. (M1-4e5f6a7b)\n```\n\nQuando o trecho não traz nada relevante, devolva `nada_relevante` igual a `true` e deixe `conversa_simplificada` vazio.\n\n## Documentos 4, 5 e 6, itens\n\nCada item de `itens_novos` tem `tipo` (`D` decisão, `F` função implementada, `PD` pendência), `texto` (1 ou 2 frases), `origem` (mensagens do trecho novo ou itens existentes), `situacao` e, só nas pendências, `recomendacao` e `depende_de`. "Função implementada" é qualquer entrega concluída na conversa: código, configuração, documento ou processo.\n\nSituações permitidas:\n\n| Tipo | Situações |\n| --- | --- |\n| D, decisões | `vigente`, `substituída por <ID>`, `revogada em <M-ID>` |\n| F, funções implementadas | `concluída`, `substituída por <ID>`, `desfeita em <M-ID>` |\n| PD, pendências | `aberta`, `encerrada em <M-ID> (<motivo curto>)` |\n\nComo o programa grava um item:\n\n```markdown\n### PD1-4e5f6a7b\nEscolher o formato do gráfico.\n\n- Recomendação: comparar barras e linhas.\n- Depende de: o usuário escolher o formato do gráfico.\n- Origem: M66-4e5f6a7b\n- Situação: aberta\n- Intervalo da rodada: M56-4e5f6a7b a M80-4e5f6a7b\n```\n\nAntes de criar uma decisão, procure na parte das decisões uma decisão com o mesmo sentido. Se ela existir, cite a existente e não crie outra. Se a decisão nova muda uma existente, crie a nova e marque a antiga como `substituída por N<n>` em `mudancas`.\n\nPara mudar a situação de um item que já existe, inclusive de outra conversa da mesma pasta, use `mudancas`, com o identificador, a situação nova e a origem. A origem de um item novo ou de uma mudança é uma mensagem do trecho novo ou um item existente, nunca uma mensagem de um trecho anterior. Na migração, a origem é o nome do arquivo antigo.\n\n## Documento 7, handoff\n\nAs 9 chaves do campo `handoff` viram as 9 seções, nesta ordem: Objetivo; Pautas e estado atual; Próximo passo; Decisões e autorizações vigentes; Restrições vigentes; Descobertas e tentativas descartadas; Pendências e compromissos; Lacunas; Como retomar. Escreva cada seção em parágrafos curtos, cada um com as mensagens de origem entre parênteses. O handoff é reescrito inteiro a cada rodada: inclua o que ainda vale do handoff anterior.\n\nO handoff precisa se explicar sozinho, sem abrir os documentos 4, 5 e 6. No texto, todo item citado vem com uma descrição curta, por exemplo `PD24-b2b21be3 (ver se a carga do Mac derruba testes de tempo)`. Não cite um item só pelo identificador. A lista de origens no fim de cada parágrafo continua só com os identificadores.\n\n## Resumo\n\nO campo `resumo` tem até 80 caracteres e vai para o índice da pasta, na coluna "Assunto".\n\n## Migração\n\nA resposta traz `handoffs_antigos`, com 1 entrada por conversa dos arquivos desta parte. Cada entrada contém `conversa`, `resumo` de até 80 caracteres e `handoff` com as 9 chaves. O programa calcula as datas pelo nome do handoff mais antigo. Não inclua `data` na resposta.\n\nCada item novo também traz `conversa`. As origens citam os nomes dos arquivos antigos enviados. Cite nos parágrafos do handoff os arquivos de origem. Preserve no novo handoff o conteúdo vigente de `handoff_anterior` quando uma conversa continuar em outra parte.\n\n`sem_conteudo` lista somente handoffs com menos de 200 caracteres úteis, sem títulos e referências. O programa confere a contagem. Um handoff intermediário com 200 ou mais caracteres precisa de origem em um item ou no handoff. O programa classifica `index.md` e `.state` sem enviá-los ao redator. Links simbólicos não são lidos.\n',
+                      'en': '# Document templates\n\nThe program writes the headers, the block titles and the final identifiers. You write the content. Use `N1`, `N2`… for new items in any field; the program replaces those references with the final identifiers.\n\nThe message brings only what you need to see from documents 4, 5 and 6. The decisions part brings only the decisions in force, with the full text and without the control data. The implemented functions part brings only those of this conversation. The pending items part brings only the open ones, in full. The items that do not appear stay in the documents and can be cited by their identifier.\n\nCite only messages from the new segment or before it and items that exist in the folder. Use `N1`, `N2`… for new items in this response. To discuss what comes after the new segment, write without an identifier. During migration, cite old files and items, since the messages do not exist.\n\n## Document 3, simplified conversation\n\nThe `conversa_simplificada` field is the body of 1 block. It starts with the subject line and continues with short paragraphs. Each paragraph ends with the source messages in parentheses, separated by commas. A range uses the form `M3-4e5f6a7b a M7-4e5f6a7b`.\n\n```markdown\n**Subject: failure of the automatic Codex record.**\n\nThe automatic Codex record failed before compaction. The program rejected 2 quotes that were not identical in the conversation. (M1-4e5f6a7b)\n```\n\nWhen the segment brings nothing relevant, return `nada_relevante` equal to `true` and leave `conversa_simplificada` empty.\n\n## Documents 4, 5 and 6, items\n\nEach item of `itens_novos` has `tipo` (`D` decision, `F` implemented function, `PD` pending item), `texto` (1 or 2 sentences), `origem` (messages of the new segment or existing items), `situacao` and, only in pending items, `recomendacao` and `depende_de`. An "implemented function" is any delivery finished in the conversation: code, configuration, document or process.\n\nAllowed statuses:\n\n| Type | Statuses |\n| --- | --- |\n| D, decisions | `in force`, `replaced by <ID>`, `revoked in <M-ID>` |\n| F, implemented functions | `done`, `replaced by <ID>`, `undone in <M-ID>` |\n| PD, pending items | `open`, `closed in <M-ID> (<short reason>)` |\n\nHow the program writes an item:\n\n```markdown\n### PD1-4e5f6a7b\nChoose the chart format.\n\n- Recommendation: compare bars and lines.\n- Depends on: the user choosing the chart format.\n- Source: M66-4e5f6a7b\n- Status: open\n- Run range: M56-4e5f6a7b a M80-4e5f6a7b\n```\n\nBefore creating a decision, look in the decisions part for a decision with the same meaning. If it exists, cite the existing one and do not create another. If the new decision changes an existing one, create the new one and mark the old one as `replaced by N<n>` in `mudancas`.\n\nTo change the status of an item that already exists, including one from another conversation of the same folder, use `mudancas`, with the identifier, the new status and the source. The source of a new item or a change is a message from the new segment or an existing item, never a message from an earlier segment. During migration, the source is the old file name.\n\n## Document 7, handoff\n\nThe 9 keys of the `handoff` field become the 9 sections, in this order: Goal; Topics and current state; Next step; Decisions and authorizations in force; Constraints in force; Findings and discarded approaches; Pending items and commitments; Gaps; How to resume. Write each section in short paragraphs, each with the source messages in parentheses. The handoff is rewritten in full on every run: include what still holds from the previous handoff.\n\nThe handoff must explain itself, without opening documents 4, 5 and 6. In the text, every cited item comes with a short description, for example `PD24-b2b21be3 (check whether the Mac load breaks timing tests)`. Do not cite an item by its identifier alone. The list of sources at the end of each paragraph keeps only the identifiers.\n\n## Summary\n\nThe `resumo` field has up to 80 characters and goes to the folder index, in the "Subject" column.\n\n## Migration\n\nReturn `handoffs_antigos`, with 1 entry per conversation in this part\'s files. Each entry contains `conversa`, `resumo` of up to 80 characters and `handoff` with the 9 keys. The program calculates dates from the oldest handoff file name. Do not include `data` in the response.\n\nEach new item also includes `conversa`. Sources cite the supplied old file names. Cite source files in handoff paragraphs. Preserve what still applies from `handoff_anterior` when a conversation continues in another part.\n\n`sem_conteudo` lists only handoffs with fewer than 200 useful characters, excluding headings and references. The program checks the count. An intermediate handoff with 200 or more characters must be a source of an item or handoff. The program classifies `index.md` and `.state` without sending them to the writer. Symbolic links are not read.\n'}
 
 
 def object_schema(properties):
@@ -631,7 +541,7 @@ class AppServer:
         self.selector = selectors.DefaultSelector()
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
         try:
-            self.call("initialize", {"clientInfo": {"name": "hopper_documentation_openai", "version": "2.0.0"},
+            self.call("initialize", {"clientInfo": {"name": "hopper_documentation_openai", "version": "2.1.0"},
                                      "capabilities": {"experimentalApi": True}})
             self.send({"method": "initialized"})
         except BaseException:
@@ -1227,8 +1137,9 @@ def validate_response(response, new_messages, existing_items, existing_messages)
     for item in response["itens_novos"]:
         if not item["texto"].strip() or not valid_status(item["tipo"], item["situacao"]):
             raise Failure("situação de item ou texto inválido")
-        if item["tipo"] != "PD" and (item["recomendacao"] or item["depende_de"]):
-            raise Failure("recomendacao e depende_de devem ficar vazios nos tipos D e F")
+        if item["tipo"] != "PD":
+            # Versão 2.1: os campos que não valem para D e F são limpos, sem recusar a resposta inteira.
+            item["recomendacao"], item["depende_de"] = "", ""
     provisional_types = {item["ref"]: item["tipo"] for item in response["itens_novos"]}
     for change in response["mudancas"]:
         target = change["id"]
@@ -1384,11 +1295,36 @@ def material(name, fallback):
     return read(path) if path.is_file() else fallback
 
 
+def item_text(item):
+    return "\n".join(line for line in item["body"].splitlines()
+                     if line.strip() and not line.startswith("- ") and not line.startswith("<!--")).strip()
+
+
+def writer_list(text, kind, code):
+    """Versão 2.1: só o que o redator precisa ver; o programa continua lendo os documentos inteiros."""
+    first = text.split("\n", 1)[0]
+    result = [first] if first.startswith("# ") else []
+    for item in items_in(text):
+        status = item["fields"].get(T["status"], "")
+        if kind == "D" and not status.startswith(T["situations"]["D"][0]):
+            continue
+        if kind == "F" and item["code"] != code:
+            continue
+        if kind == "PD" and not status.startswith(T["situations"]["PD"][0]):
+            continue
+        if kind == "PD":
+            result.append(text[item["start"]:item["end"]].strip())
+        else:
+            result.append("### " + item["id"] + "\n" + item_text(item))
+    return "\n\n".join(result)
+
+
 def writer_prompt(runtime, interval, excerpt, documents):
     tags = [
         ("regras_de_escrita", material(T["rules"], FALLBACK_RULES[LANGUAGE])),
         ("modelos", material(T["templates"], FALLBACK_TEMPLATES[LANGUAGE])),
-        ("decisoes", documents[4]), ("funcoes", documents[5]), ("pendencias", documents[6]),
+        ("decisoes", writer_list(documents[4], "D", runtime.code)), ("funcoes", writer_list(documents[5], "F", runtime.code)),
+        ("pendencias", writer_list(documents[6], "PD", runtime.code)),
         ("handoff_anterior", documents[7]), ("trecho_novo", excerpt),
     ]
     heading = ("Conversa: {}. Código: {}. Intervalo: {}." if LANGUAGE == "pt-br" else
@@ -1532,6 +1468,8 @@ def append_items(runtime, response, interval, mapping):
 def apply_changes(runtime, response, mapping, operation):
     missing = []
     for number, change in enumerate(replace_refs(response["mudancas"], mapping)):
+        if re.search(r"\b" + re.escape(change["id"]) + r"\b", change["situacao"]):
+            continue
         marker = "<!-- applied-change: " + short_name(operation + "\n" + str(number)) + " -->"
         applied = False
         for kind, path in shared_documents(runtime).items():
@@ -1604,7 +1542,10 @@ def write_index(runtime):
     checked(runtime.doc, runtime.doc)
     lines = ["# " + T["titles"][1], "", T["project"] + ": " + str(runtime.project), "",
              "## " + T["order"], ""]
-    lines += [str(n) + ". " + instruction for n, instruction in enumerate(T["reading"], 1)]
+    recent = sorted((f.name for f in (runtime.doc / T["conversations"]).glob("*")
+                     if re.fullmatch(r"\d{4}-\d{2}-\d{2}-[a-zA-Z0-9-]+", f.name)), reverse=True)
+    example = recent[0][11:] if recent else "57f1a26f"
+    lines += [str(n) + ". " + instruction.format(exemplo=example) for n, instruction in enumerate(T["reading"], 1)]
     lines += ["", "## " + T["table"], "", "| " + " | ".join(T["columns"]) + " |",
               "| --- | --- | --- | --- | --- | --- |"]
     base = runtime.doc / T["conversations"]
@@ -1650,16 +1591,30 @@ def journal_path(runtime, start, end):
     return runtime.data / "diarios" / (identity + "-M{}-M{}.json".format(start, end))
 
 
+def normalized(text):
+    return " ".join(text.casefold().split()).rstrip(" .")
+
+
 def reserve_ids(runtime, response):
     existing = all_items(runtime)
     counters, mapping = {}, {}
+    # Versão 2.1: uma decisão nova com o mesmo texto de uma decisão vigente reaproveita o identificador.
+    decisions = {}
+    for value in existing.values():
+        if value["kind"] == "D" and value["fields"].get(T["status"], "").startswith(T["situations"]["D"][0]):
+            decisions.setdefault(normalized(item_text(value)), value["id"])
     for item in response["itens_novos"]:
         kind = item["tipo"]
+        if kind == "D" and normalized(item["texto"]) in decisions:
+            mapping[item["ref"]] = decisions[normalized(item["texto"])]
+            continue
         if kind not in counters:
             counters[kind] = max([value["n"] for value in existing.values()
                                   if value["kind"] == kind and value["code"] == runtime.code] or [0])
         counters[kind] += 1
         mapping[item["ref"]] = "{}{}-{}".format(kind, counters[kind], runtime.code)
+        if kind == "D":
+            decisions.setdefault(normalized(item["texto"]), mapping[item["ref"]])
     return mapping
 
 
@@ -2336,6 +2291,26 @@ def hook_command(command):
         return {"systemMessage": record_failure(runtime, error)}
 
 
+def resolve_conversation(value):
+    """Versão 2.1: troca o código de 8 ou 12 letras do índice pelo identificador completo da conversa."""
+    code = value.lower()
+    if not re.fullmatch(r"[0-9a-f]{8}|[0-9a-f]{12}", code):
+        return value
+    codex = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex").expanduser()
+    found = set()
+    for folder in ("sessions", "archived_sessions"):
+        for path in (codex / folder).glob("**/rollout-*.jsonl"):
+            identity = path.stem[-36:]
+            if re.fullmatch(r"[0-9a-f-]{36}", identity) and identity.replace("-", "").endswith(code):
+                found.add(identity)
+    if not found:
+        raise Failure("conversa não encontrada no histórico" if LANGUAGE == "pt-br" else "conversation not found in the history")
+    if len(found) > 1:
+        raise Failure(("o código {} corresponde a {} conversas; use o identificador completo" if LANGUAGE == "pt-br" else
+                       "the code {} matches {} conversations; use the full identifier").format(value, len(found)))
+    return found.pop()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -2357,6 +2332,8 @@ def main(argv=None):
         return 0
     runtime = None
     try:
+        if args.command == "rodada":
+            args.conversa = resolve_conversation(args.conversa)
         runtime = Runtime(args.conversa if args.command == "rodada" else "",
                           args.acionamento if args.command == 'rodada' else args.command if args.command == 'migrar' else 'pedido',
                           args.trigger if args.command == 'rodada' else '')

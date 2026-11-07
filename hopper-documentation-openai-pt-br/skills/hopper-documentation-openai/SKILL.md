@@ -1,6 +1,6 @@
 ---
 name: hopper-documentation-openai
-description: Documenta a conversa atual do Codex em 7 documentos (índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff) na pasta docs-by-hopper-documentation-openai do projeto. Use quando o usuário pedir para documentar ou registrar a conversa, salvar o progresso ou fazer um handoff. Não use para explicar, revisar ou editar esta skill.
+description: Documenta a conversa atual do Codex, ou outra conversa indicada pelo código, em 7 documentos (índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff) na pasta docs-by-hopper-documentation-openai do projeto. Use quando o usuário pedir para documentar ou registrar a conversa, salvar o progresso, fazer um handoff ou documentar outra conversa antes de continuá-la. Não use para explicar, revisar ou editar esta skill.
 ---
 
 # hopper-documentation-openai
@@ -26,6 +26,8 @@ O gatilho executa a cópia antes de toda compactação e inicia a mesma rodada e
    ```sh
    python3 "<pasta desta skill>/scripts/hopper_documentation_openai.py" rodada --conversa "$CODEX_THREAD_ID"
    ```
+
+   Se o pedido for para documentar outra conversa, troque `"$CODEX_THREAD_ID"` pelo código que o usuário indicar. O código tem 8 ou 12 letras e aparece na tabela do índice da pasta, como em "documente a conversa 57f1a26f". O identificador completo também serve. A outra conversa precisa ter rodado nesta mesma máquina e nesta mesma conta.
 
 2. Diga em 1 frase que a documentação começou em segundo plano.
 3. Acompanhe o mesmo processo até terminar. Se a ferramenta devolver um identificador de sessão, use-o para obter a saída restante.

@@ -1,5 +1,15 @@
 # Alterações
 
+## 2.1.0 (2026-11-07)
+
+- O índice manda documentar a conversa antes de continuá-la e ler só o handoff dela. Os demais documentos ficam para consulta.
+- O redator recebe só as decisões vigentes, as funções implementadas da conversa e as pendências abertas.
+- A rodada a pedido aceita o código de 8 ou 12 letras do índice, para documentar outra conversa.
+- Uma decisão vigente repetida com o mesmo texto reaproveita o identificador.
+- Recomendação e dependência preenchidas em decisão ou função são limpas, sem recusar a resposta inteira.
+- Regras de escrita alinhadas às regras de forma do proprietário.
+- Critérios congelados ajustados com o "sim" do proprietário, na marca `criterios-v2.1.0`.
+
 ## 2.0.0 (2026-11-04)
 
 - Registra cada conversa em 7 documentos, com índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff.

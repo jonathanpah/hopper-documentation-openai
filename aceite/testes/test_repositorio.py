@@ -24,8 +24,8 @@ for pacote, idioma in PACOTES:
         (SKILL_REL / TEXTOS[idioma]["regras"]).as_posix(), (SKILL_REL / TEXTOS[idioma]["modelos"]).as_posix(), PROGRAMA_REL.as_posix(),
     ])
 PROIBIDOS = ("citation_retries", "latest_context", "previous_handoff")
-HASH_REGRAS = {"pt-br": "799d1bd3bc3c9316c65c52d3cd89975212af397c075ebb49328a9ff14407a802",
-               "en": "ce52172f4e9090b05b1605163f16e41fad4dc4b201d2a89d2dd1d35d910765c2"}
+HASH_REGRAS = {"pt-br": "f13c1ca6f8d9741ff2d4c8d221f317873d7e739828f63711be0f474c9b91b864",
+               "en": "c241f5145b6576fc7a56cd7771095808ffe6879d3903c54f40e498bd9b8d350b"}  # versão 2.1: regras de forma do proprietário
 
 
 class Repositorio(unittest.TestCase):
@@ -54,7 +54,7 @@ class Repositorio(unittest.TestCase):
                 atingidos.append(nome)
         self.assertEqual(atingidos, [], "R34: referências à implementação antiga fora das 2 exceções")
         for pacote, _ in PACOTES:
-            self.assertEqual(json.loads(le(pacote / ".codex-plugin/plugin.json"))["version"], "2.0.0")
+            self.assertEqual(json.loads(le(pacote / ".codex-plugin/plugin.json"))["version"], "2.1.0")
 
     def test_R36_pacotes_completos_programas_iguais_e_regras_congeladas(self):
         """T36. Só LANGUAGE difere, componentes dos 2 idiomas e SHA-256 de C14."""
@@ -81,8 +81,8 @@ class Repositorio(unittest.TestCase):
     def test_R42_skill_com_2_secoes_e_menos_de_500_linhas(self):
         """T42. Os 2 SKILL.md, nome, descrição C15 e invocação implícita."""
         descricoes = {
-            "pt-br": "Documenta a conversa atual do Codex em 7 documentos (índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff) na pasta docs-by-hopper-documentation-openai do projeto. Use quando o usuário pedir para documentar ou registrar a conversa, salvar o progresso ou fazer um handoff. Não use para explicar, revisar ou editar esta skill.",
-            "en": "Documents the current Codex conversation in 7 documents (index, full conversation, simplified conversation, decisions, implemented functions, pending items and handoff) in the project's docs-by-hopper-documentation-openai folder. Use when the user asks to document or record the conversation, save progress or write a handoff. Do not use to explain, review or edit this skill.",
+            "pt-br": 'Documenta a conversa atual do Codex, ou outra conversa indicada pelo código, em 7 documentos (índice, conversa integral, conversa simplificada, decisões, funções implementadas, pendências e handoff) na pasta docs-by-hopper-documentation-openai do projeto. Use quando o usuário pedir para documentar ou registrar a conversa, salvar o progresso, fazer um handoff ou documentar outra conversa antes de continuá-la. Não use para explicar, revisar ou editar esta skill.',
+            "en": "Documents the current Codex conversation, or another conversation given by its code, in 7 documents (index, full conversation, simplified conversation, decisions, implemented functions, pending items and handoff) in the project's docs-by-hopper-documentation-openai folder. Use when the user asks to document or record the conversation, save progress, write a handoff or document another conversation before continuing it. Do not use to explain, review or edit this skill.",
         }
         for pacote, idioma in PACOTES:
             caminho = pacote / SKILL_REL / "SKILL.md"
