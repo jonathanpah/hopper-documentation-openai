@@ -70,8 +70,18 @@ class Redator(CasoDeAceite):
         self.sucesso(self.amb.rodada(respostas=("rodada-m15",)), "R11")
         entrada2 = self.amb.chamadas()[1]["stdin"]
         self.assertEqual(tag(entrada2, "trecho_novo"), le(CASOS / "b1" / ("esperado-m15-" + IDIOMA + ".md")).strip())
-        for n, nome in ((4, "decisoes"), (5, "funcoes"), (6, "pendencias"), (7, "handoff_anterior")):
-            self.assertEqual(tag(entrada2, nome), antigos[n].strip())
+        # Versão 2.1: o redator recebe as decisões vigentes e as funções da conversa sem os dados de controle,
+        # e as pendências abertas completas.
+        self.assertEqual(tag(entrada2, "handoff_anterior"), antigos[7].strip())
+        for n, nome in ((4, "decisoes"), (5, "funcoes"), (6, "pendencias")):
+            recebido = tag(entrada2, nome)
+            for bloco in re.split(r"\n(?=### )", antigos[n].strip())[1:]:
+                cabeca = bloco.split("\n", 1)[0]
+                self.assertIn(cabeca + "\n", recebido + "\n", "R11: item ausente da entrada " + cabeca)
+                if n == 6:
+                    self.assertIn(bloco.strip(), recebido)
+            if n != 6:
+                self.assertNotIn("- " + TEXTO["origem"] + ":", recebido)
         # 3 mensagens de tamanho conhecido. O limite obriga 1 mensagem por parte.
         for parcial in (False, True):
             amb = self.novo_ambiente()
@@ -182,7 +192,7 @@ class Redator(CasoDeAceite):
             if persistente == "mcp_persistente":
                 self.assertIn("servidor MCP ativo no redator", json.dumps(amb.rodadas(), ensure_ascii=False))
         # Cada alteração abaixo viola uma regra explícita do Anexo D.
-        for defeito in ("campo_faltando", "campo_extra", "resumo_longo", "origem_vazia", "ref_invalida", "situacao", "recomendacao_D", "depende_F", "handoff_incompleto"):
+        for defeito in ("campo_faltando", "campo_extra", "resumo_longo", "origem_vazia", "ref_invalida", "situacao", "handoff_incompleto"):
             amb = self.novo_ambiente()
             amb.historico_b1()
             self.sucesso(amb.rodada(), "R12")
@@ -217,6 +227,22 @@ class Redator(CasoDeAceite):
             self.assertTrue(any(l.get("etapa") == "escrita" and l.get("resultado") == "falhou" for l in amb.rodadas()))
             self.sucesso(amb.rodada(respostas=("rodada-m15",)), "R12")
             self.documento(7, "R12", amb)
+        # Versão 2.1: recomendação e dependência em decisão ou função são limpas, sem recusar a resposta.
+        for defeito in ("recomendacao_D", "depende_F"):
+            amb = self.novo_ambiente()
+            amb.historico_b1()
+            self.sucesso(amb.rodada(), "R12")
+            amb.segunda_rodada()
+            valor = json.loads(re.sub(r"M\d+-" + CODIGO_B1, M(15), le(amb.resposta("rodada-b1"))))
+            if defeito == "recomendacao_D":
+                valor["itens_novos"][0]["recomendacao"] = "Não deve existir."
+            else:
+                valor["itens_novos"][1]["depende_de"] = "Não deve existir."
+            for item in valor["itens_novos"]:
+                item["texto"] = item["texto"].rstrip(".") + " Na segunda rodada."
+            arq = self.resposta_manual(amb, defeito, valor)
+            self.sucesso(self.com_respostas(amb, [arq]), "R12")
+            self.assertNotIn("Não deve existir.", le(amb.d(4)) + le(amb.d(5)))
         amb = self.novo_ambiente()
         amb.historico_b1()
         self.sucesso(amb.rodada(), "R12")
@@ -399,23 +425,20 @@ class Redator(CasoDeAceite):
         self.assertIn("## " + TEXTO["ordem"], texto)
         self.assertIn("## " + TEXTO["tabela"], texto)
         ordem = re.findall(r"^(\d+)\. (.+)$", texto, re.M)
-        self.assertEqual([int(n) for n, _ in ordem], list(range(1, 8)))
+        self.assertEqual([int(n) for n, _ in ordem], list(range(1, 5)))
+        # Versão 2.1: documentar a conversa antes, ler o handoff dela e consultar o resto.
         esperada = ([
             [r"\bíndice\b"],
-            [r"\bhandoff\b", r"conversa mais recente", r"documento 7"],
-            [r"\bpendências\b", re.escape(TEXTO["d6"])],
-            [r"\bdecisões\b", re.escape(TEXTO["d4"])],
-            [r"funções implementadas", re.escape(TEXTO["d5"])],
-            [r"conversa simplificada", r"(?:vai |irá |a |para )continuar", r"documento 3"],
-            [r"conversa integral", r"conferir uma origem", r"documento 2"],
+            [r"documente a conversa", r"\bcódigo\b"],
+            [r"\bhandoff\b", r"vai continuar", r"conversa mais recente", r"documento 7"],
+            [r"\bpendências\b", re.escape(TEXTO["d6"]), r"\bdecisões\b", re.escape(TEXTO["d4"]), r"funções implementadas",
+             re.escape(TEXTO["d5"]), r"documento 3", r"documento 2"],
         ] if IDIOMA == "pt-br" else [
             [r"\bindex\b"],
-            [r"\bhandoff\b", r"(?:most recent|latest) conversation|conversation.*(?:most recent|latest)", r"document 7"],
-            [r"\bpending\b", re.escape(TEXTO["d6"])],
-            [r"\bdecisions\b", re.escape(TEXTO["d4"])],
-            [r"implemented (?:functions|features)", re.escape(TEXTO["d5"])],
-            [r"simplified conversation", r"\b(?:continue|resume)\b", r"document 3"],
-            [r"full conversation", r"\b(?:check|verify|confirm)\b", r"\b(?:source|origin)\b", r"document 2"],
+            [r"document conversation", r"\bcode\b"],
+            [r"\bhandoff\b", r"going to continue", r"most recent conversation", r"document 7"],
+            [r"\bpending\b", re.escape(TEXTO["d6"]), r"\bdecisions\b", re.escape(TEXTO["d4"]), r"implemented functions",
+             re.escape(TEXTO["d5"]), r"document 3", r"document 2"],
         ])
         for (_, passo), padroes in zip(ordem, esperada):
             visivel = re.sub(r"\[([^]]+)\]\([^)]+\)", r"\1", passo)

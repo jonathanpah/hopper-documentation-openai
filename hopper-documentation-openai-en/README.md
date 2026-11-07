@@ -1,14 +1,14 @@
 # hopper-documentation-openai in English
 
-A Codex plugin that records a conversation in 7 Markdown documents, on request and before every compaction. The separate writer uses **gpt-6-luna, xhigh effort**. It preserves the main conversation's model and effort.
+A Codex plugin that records a conversation in 7 Markdown documents, on request and before every compaction. On request, it also documents another finished conversation, by the 8-letter code shown in the index, as in "document conversation 57f1a26f". The separate writer uses **gpt-6-luna, xhigh effort**. It preserves the main conversation's model and effort.
 
-This package contains version **2.0.0**. Install from GitHub using a published tag.
+This package contains version **2.1.0**. Install from GitHub using a published tag.
 
 ## Installation and use
 
 Requires Python 3.9 or newer and authenticated Codex with compatible app-server and hook interfaces. Uses only the Python standard library. The plugin supports macOS and Linux. No additional API key is required.
 
-Download `hopper-documentation-openai-2.0.0-en.zip` and `SHA256SUMS` from the [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) once published. Verify SHA-256 and compare the contents against the tag.
+Download `hopper-documentation-openai-2.1.0-en.zip` and `SHA256SUMS` from the [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) once published. Verify SHA-256 and compare the contents against the tag.
 
 To update an existing installation, replace `<tag>` with a published tag and run all 4 commands in order. For a new installation, run only the last 2.
 

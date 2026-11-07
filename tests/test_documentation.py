@@ -23,8 +23,8 @@ class Packaging(unittest.TestCase):
             names = packaging.build(a)
             packaging.build(b)
             self.assertEqual(set(names), {
-                "hopper-documentation-openai-2.0.0-pt-br.zip",
-                "hopper-documentation-openai-2.0.0-en.zip",
+                "hopper-documentation-openai-2.1.0-pt-br.zip",
+                "hopper-documentation-openai-2.1.0-en.zip",
             })
             self.assertEqual((a / "SHA256SUMS").read_bytes(), (b / "SHA256SUMS").read_bytes())
             for language, name in zip(packaging.LANGUAGES, names):

@@ -256,7 +256,11 @@ class Execucao(CasoDeAceite):
         codigo_outro = CONVERSA_OUTRA[-8:]
         lenta = self.perfil(amb, "conversa-a-lenta", espera_segundos=125)
         resposta_b = amb.respostas / "conversa-b.json"
-        grava_json(resposta_b, json.loads(le(amb.resposta("rodada-b1")).replace(CODIGO_B1, codigo_outro)))
+        # Versão 2.1: decisão vigente com o mesmo texto reaproveita o identificador; a outra conversa usa texto próprio.
+        resposta_outra = json.loads(le(amb.resposta("rodada-b1")).replace(CODIGO_B1, codigo_outro))
+        for item in resposta_outra["itens_novos"]:
+            item["texto"] = item["texto"].rstrip(".") + " Na outra conversa."
+        grava_json(resposta_b, resposta_outra)
         p = amb.inicia("rodada", "--conversa", CONVERSA_B1, respostas=(), escala="0.02",
                        extra={PREFIXO + "SIMULADO": str(lenta)})
         self.assertTrue(espera(lambda: bool(amb.chamadas()), 5), "R27: a conversa A não iniciou")

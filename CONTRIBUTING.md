@@ -42,7 +42,7 @@ A verificação do GitHub roda em Ubuntu e macOS, com Python 3.9 e 3.13, nos 2 i
 
 ## Critérios congelados
 
-`aceite/`, `SPEC.md` e `.github/workflows/verificar.yml` são critérios congelados. `aceite/MANIFESTO.sha256` registra seus hashes e a tag `criterios-congelados` fixa a referência. `.github/workflows/integridade.yml` também é protegido. Preserve esses arquivos durante a implementação.
+`aceite/`, `SPEC.md` e `.github/workflows/verificar.yml` são critérios congelados. `aceite/MANIFESTO.sha256` registra seus hashes e a tag `criterios-v<versão>` da versão atual fixa a referência (hoje `criterios-v2.1.0`; `criterios-v2.0.0` guarda os critérios da versão 2.0). Uma mudança de critério ganha uma tag nova, porque envios forçados não são permitidos. `.github/workflows/integridade.yml` também é protegido. Preserve esses arquivos durante a implementação.
 
 Uma alteração de critério exige a autorização e o procedimento C18 do SPEC. Uma falha do teste deve permanecer visível até a correção ou a revisão autorizada do critério. Os testes adicionais em `tests/` complementam o aceite.
 

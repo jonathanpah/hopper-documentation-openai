@@ -30,14 +30,14 @@ jobs:
           if ! sha256sum --check --strict aceite/MANIFESTO.sha256; then
             echo "CRITÉRIO ALTERADO: um critério congelado não confere com o manifesto"; exit 1
           fi
-          if ! git rev-parse -q --verify refs/tags/criterios-congelados >/dev/null; then
-            echo "CRITÉRIO ALTERADO: a tag criterios-congelados não existe"; exit 1
+          if ! git rev-parse -q --verify refs/tags/criterios-v2.1.0 >/dev/null; then
+            echo "CRITÉRIO ALTERADO: a tag criterios-v2.1.0 não existe"; exit 1
           fi
-          if ! git show criterios-congelados:aceite/MANIFESTO.sha256 > "$RUNNER_TEMP/manifesto-da-tag"; then
+          if ! git show criterios-v2.1.0:aceite/MANIFESTO.sha256 > "$RUNNER_TEMP/manifesto-da-tag"; then
             echo "CRITÉRIO ALTERADO: manifesto ausente na tag"; exit 1
           fi
           if ! cmp -s "$RUNNER_TEMP/manifesto-da-tag" aceite/MANIFESTO.sha256; then
-            echo "CRITÉRIO ALTERADO: o manifesto difere da tag criterios-congelados"; exit 1
+            echo "CRITÉRIO ALTERADO: o manifesto difere da tag criterios-v2.1.0"; exit 1
           fi
           echo "critérios congelados conferem"
 

@@ -2,6 +2,8 @@
 
 O programa grava os cabeçalhos, os títulos dos blocos e os identificadores finais. Você escreve o conteúdo. Use `N1`, `N2`… para os itens novos em qualquer campo; o programa troca essas referências pelos identificadores finais.
 
+A mensagem traz só o que você precisa ver dos documentos 4, 5 e 6. Na parte das decisões vêm só as decisões vigentes, com o texto inteiro e sem os dados de controle. Na parte das funções implementadas vêm só as desta conversa. Na parte das pendências vêm só as abertas, completas. Os itens que não aparecem continuam nos documentos e podem ser citados pelo identificador.
+
 Cite só mensagens do trecho novo ou anteriores a ele e itens existentes na pasta. Use `N1`, `N2`… para itens novos desta resposta. Para falar do que vem depois do trecho novo, escreva sem identificador. Na migração, cite arquivos antigos e itens, pois as mensagens não existem.
 
 ## Documento 3, conversa simplificada
@@ -41,11 +43,15 @@ Escolher o formato do gráfico.
 - Intervalo da rodada: M56-4e5f6a7b a M80-4e5f6a7b
 ```
 
+Antes de criar uma decisão, procure na parte das decisões uma decisão com o mesmo sentido. Se ela existir, cite a existente e não crie outra. Se a decisão nova muda uma existente, crie a nova e marque a antiga como `substituída por N<n>` em `mudancas`.
+
 Para mudar a situação de um item que já existe, inclusive de outra conversa da mesma pasta, use `mudancas`, com o identificador, a situação nova e a origem. A origem de um item novo ou de uma mudança é uma mensagem do trecho novo ou um item existente, nunca uma mensagem de um trecho anterior. Na migração, a origem é o nome do arquivo antigo.
 
 ## Documento 7, handoff
 
 As 9 chaves do campo `handoff` viram as 9 seções, nesta ordem: Objetivo; Pautas e estado atual; Próximo passo; Decisões e autorizações vigentes; Restrições vigentes; Descobertas e tentativas descartadas; Pendências e compromissos; Lacunas; Como retomar. Escreva cada seção em parágrafos curtos, cada um com as mensagens de origem entre parênteses. O handoff é reescrito inteiro a cada rodada: inclua o que ainda vale do handoff anterior.
+
+O handoff precisa se explicar sozinho, sem abrir os documentos 4, 5 e 6. No texto, todo item citado vem com uma descrição curta, por exemplo `PD24-b2b21be3 (ver se a carga do Mac derruba testes de tempo)`. Não cite um item só pelo identificador. A lista de origens no fim de cada parágrafo continua só com os identificadores.
 
 ## Resumo
 

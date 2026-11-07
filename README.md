@@ -2,7 +2,7 @@
 
 Plugin do Codex que registra cada conversa em 7 documentos Markdown, a pedido e antes de toda compactação. O redator usa **gpt-6-luna, esforço xhigh**, em um processo separado. O modelo e o esforço da conversa principal são preservados.
 
-A versão **2.0.0** segue o [SPEC.md](SPEC.md). Consulte a situação de publicação no [changelog](CHANGELOG.md). Os comandos de instalação exigem uma tag já publicada, de teste ou de release.
+A versão **2.1.0** segue o [SPEC.md](SPEC.md). Consulte a situação de publicação no [changelog](CHANGELOG.md). Os comandos de instalação exigem uma tag já publicada, de teste ou de release.
 
 | Pacote | Idioma | Guia |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ codex plugin marketplace add jonathanpah/hopper-documentation-openai --ref <tag>
 codex plugin add hopper-documentation-openai@hopper-documentation-openai
 ```
 
-A release final usa `v2.0.0`; as instalações de teste usam a tag escolhida pelo executor. Confira os arquivos instalados contra a tag. Revise os 2 comandos em `/hooks` ou em **Settings > Hooks** no aplicativo. A confiança depende da definição instalada. Abra uma sessão nova depois da troca.
+A release final usa `v2.1.0`; as instalações de teste usam a tag escolhida pelo executor. Confira os arquivos instalados contra a tag. Revise os 2 comandos em `/hooks` ou em **Settings > Hooks** no aplicativo. A confiança depende da definição instalada. Abra uma sessão nova depois da troca.
 
 A instalação pelo GitHub usa o catálogo da raiz, que seleciona o pacote em português. Os ZIPs dos 2 idiomas ficam na [release](https://github.com/jonathanpah/hopper-documentation-openai/releases) para conferência de `SHA256SUMS` e do conteúdo.
 
@@ -53,6 +53,6 @@ Requer Make e Python 3.9 ou mais novo. Os testes usam dados e Codex simulados, s
 
 Use `PYTHON=/usr/bin/python3` ou outro interpretador compatível para selecionar o Python. Os testes rodam com `TZ=UTC`. Consulte o [guia de contribuição](CONTRIBUTING.md) para conferir os critérios congelados, os casos do conferidor e os limites das provas locais.
 
-O build gera `hopper-documentation-openai-2.0.0-pt-br.zip`, `hopper-documentation-openai-2.0.0-en.zip` e `SHA256SUMS`. Cada ZIP contém os arquivos da pasta do pacote, inclusive os manifestos ocultos, sem uma pasta adicional na raiz. `build/` é uma saída local ignorada pelo Git. A publicação segue C29 do [SPEC.md](SPEC.md), a partir da tag.
+O build gera `hopper-documentation-openai-2.1.0-pt-br.zip`, `hopper-documentation-openai-2.1.0-en.zip` e `SHA256SUMS`. Cada ZIP contém os arquivos da pasta do pacote, inclusive os manifestos ocultos, sem uma pasta adicional na raiz. `build/` é uma saída local ignorada pelo Git. A publicação segue C29 do [SPEC.md](SPEC.md), a partir da tag.
 
 [Índice](index.md) · [Alterações](CHANGELOG.md) · [Segurança](SECURITY.md) · [Licença MIT](LICENSE)

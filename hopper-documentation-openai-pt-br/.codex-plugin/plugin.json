@@ -1,6 +1,6 @@
 {
   "name": "hopper-documentation-openai",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Documenta conversas do Codex em 7 documentos, antes da compactação e a pedido.",
   "author": {
     "name": "hopper-documentation-openai contributors"
